@@ -36,9 +36,11 @@
 ;; This package is a loose collection of experimental bits of code related to Zotero.  That said, I use this package almost everyday.
 ;;
 ;; My primary use cases are to do the following based on ISBNs, DOIs, Zotero item-ids, and/or complex search criteria:
+;;
 ;;   - Open Zotero and select an item
 ;;   - Open Zotero PDF attachments without using the Zotero connector
 ;;   - Create bibliographies for org-mode documents exported to HTML
+;;
 ;; The first two items can be achieved interactively -- i.e. mark the criteria in the buffer, and run the function.
 ;;
 ;; ** General Package Organization
