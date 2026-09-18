@@ -187,6 +187,42 @@
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defcustom mjr-zotero-data-key-re (list (list "key"  "zotero://select/items/[0-9]_"         "[0-9A-Z]\\{8\\}")
+                                        (list "DOI"  "\\(DOI:\\|doi:\\|https://doi.org/\\)" "10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}")
+                                        (list "ISBN" "\\(isbn\\|ISBN\\):"                   "[0-9]\\(-?[0-9]\\)\\{8\\}\\(\\(-?[0-9]\\)\\{3\\}\\)?-?[0-9]"))
+  "Regular expressions for identify strings as keys.  
+Each sub-list contains the key, a regex for optional prefix junk, and a regex for the object.  The regular expressions are case sensitive.
+The default value recognizes:
+  - Zotero item keys (both by themselves and as a Zotero connector URL)
+  - ISBN numbers (with or without an ISBN:/isbn: prefix)
+  - DOIs (with or without a doi: prefix or as part of a doi.org URL)"
+  :type '(repeat (cons string string))
+  :group 'mjr-zotero)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun mjr-zotero-match-specifier-at-point ()
+"Return the marked region or a string that looks like a key value.  Return NIL if nothing is found."
+  (or (and transient-mark-mode (region-active-p) (mark) (buffer-substring-no-properties (region-beginning) (region-end)))
+      (let ((case-fold-search nil))
+        (cl-loop for (k p v) in mjr-zotero-data-key-re
+                 for m = (and (thing-at-point-looking-at (concat "\\b\\(?1:" p "\\)?\\(?2:" v "\\)\\b") 100) (match-string 2))
+                 when m
+                 do (cl-return (substring-no-properties m))))
+      (error "mjr-zotero-match-specifier-at-point: Unable to find match-specifier (no marked region or recognized key near point)!")))
+
+;; ;; Some targets for at-point tests
+;; ;; For an interactive demo, try mjr-zotero-db-cache-open-zotero or mjr-zotero-db-cache-open-attachment with these
+;;
+;; 686PNJGS
+;; zotero://select/items/0_7JU94X7V
+;; 10.1016/0893-9659(89)90079-7
+;; doi:10.1016/0893-9659(89)90079-7
+;; https://doi.org/10.1016/0893-9659(89)90079-7
+;; ISBN:978-0-321-63773-4
+;; isbn:978-0-321-63773-4
+;; 978-0-321-63773-4
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-element-match (element match-specifier)
   "Return non-NIL if the ELEMENT matches MATCH-SPECIFIER.
 MATCH-SPECIFIER is a simple match-specifier a lisp expression containing simple match-specifiers.
@@ -218,7 +254,7 @@ Simple predicates come in three forms:
     - The SUB-KEY-N element of each hash contained in the value for DATA-KEY are tested against SEARCH-STRING-N.
     - The return is non-NIL if ALL sub-* tests are non-NIL for at least one hash in the array
   3) SEARCH-STRING
-     - SEARCH-STRING is examined to see if it looks like a Zotero item-key, DOI, or ISBN.
+     - The DATA-KEY is found by using the first matching regular expressions in `mjr-zotero-data-key-re' 
 
 Match-specifiers are expressions containing simple match-specifiers.  For example we can combine two simple match-specifiers
 with an AND like this:
@@ -229,14 +265,11 @@ with an AND like this:
                   (format "%s" v))))
     ;; Transform nekked string into a match-specifier list
     (when (stringp match-specifier)
-      (if-let ((k (if (mjr-zotero-looks-like-item-key match-specifier)
-                      "key"
-                      (if (string-match-p "\\`10\.[1-9][0-9]\\{3,\\}/" match-specifier)
-                          "DOI"
-                          (if (and (string-match-p "\\`[0-9-]\\{10,\\}" match-specifier)
-                                   (string-match-p "\\`[0-9]\\{10\\}\\([0-9]\\{3\\}\\)\\{0,1\\}\\'" (string-replace "-" "" match-specifier)))
-                              "ISBN")))))
-          (setq match-specifier (list mjr-zotero-element-match-default-predicate k match-specifier))
+      (if-let ((ms (cl-loop for (k p v) in mjr-zotero-data-key-re
+                            when (let ((case-fold-search nil))
+                                   (string-match (concat "\\`\\(?1:" p "\\)?\\(?2:" v "\\)\\'") match-specifier))
+                            do (cl-return (list mjr-zotero-element-match-default-predicate k (match-string 2 match-specifier))))))
+          (setq match-specifier ms)
         (error "mjr-zotero-element-match: Unable to determine data key from search string: %s" match-specifier)))
     ;; Test for match
     (when (and (listp match-specifier) (not (null match-specifier)))
@@ -271,6 +304,18 @@ with an AND like this:
                     (funcall predicate search-string (string-it data-value))))))
           (eval (cons (car match-specifier) (mapcar (lambda (x) (mjr-zotero-element-match element x)) (cdr match-specifier))))))))
 
+;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "X9FA49XE")
+;; t
+;; TODO: Add demo for connector URL.
+;; 
+;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "978-981-283-924-4")
+;; t
+;; TODO: Add demo for isbn prefixes
+;; 
+;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "9H6MQWM9") "10.48550/arXiv.2108.01999")
+;; t
+;; TODO: Add demo for doi prefix and doi.org url
+;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") '(:equal "itemType" "book"))
 ;; t
 ;;
@@ -417,11 +462,11 @@ TAG & Q are strings in the Zotero local API syntax.  For example, search for ite
 (defun mjr-zotero-local-api-open-attachment (item-key)
   "Vsit the URL for the primary attachment of the given Zotero object via the Zotero Local API.
 WARNING: This will sometimes open the wrong attachment.  It should have a way to let the user select which attachment."
-  (if-let* ((attachment-url (mjr-zotero-recursive-getum 'error 'string (mjr-zotero-local-api-get-entry item-key) "links" "attachment" "href"))
+  (if-let* ((attachment-url (mjr-zotero-recursive-getum nil 'string (mjr-zotero-local-api-get-entry item-key) "links" "attachment" "href"))
             (attachment-id  (replace-regexp-in-string "^.*/" "" attachment-url))
-            (enclosure-url  (mjr-zotero-recursive-getum 'error 'string (mjr-zotero-local-api-get-entry attachment-id) "links" "enclosure" "href")))
+            (enclosure-url  (mjr-zotero-recursive-getum nil 'string (mjr-zotero-local-api-get-entry attachment-id) "links" "enclosure" "href")))
       (browse-url enclosure-url)
-    (error "Something went wrong!")))
+    (error "mjr-zotero-local-api-open-attachment: Something went wrong!")))
 
 ;; (mjr-zotero-local-api-open-attachment "7JU94X7V")
 
@@ -778,21 +823,27 @@ Cached bibliographic entries:
 ;; (mjr-zotero-db-cache-make-bib nil)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun mjr-zotero-db-cache-open-attachment (match-specifier)
+(defun mjr-zotero-db-cache-open-attachment (match-specifier &optional no-error)
   "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use `mjr-zotero-local-api-open-attachment' to open it's attachment."
-  (interactive (list (or (and transient-mark-mode (region-active-p) (mark) (buffer-substring-no-properties (region-beginning) (region-end)))
-                         (error "mjr-zotero-db-cache-open-attachment: Region not marked!"))))
-  (mjr-zotero-local-api-open-attachment (gethash "key" (car (mjr-zotero-db-cache-search-unique match-specifier)))))
+  (interactive (list (mjr-zotero-match-specifier-at-point)))
+  (when-let ((item-key (if no-error
+                           (ignore-errors (car (mjr-zotero-db-cache-search-unique match-specifier)))
+                           (car (mjr-zotero-db-cache-search-unique match-specifier)))))
+    (mjr-zotero-local-api-open-attachment item-key)
+    t))
 
 ;; (mjr-zotero-db-cache-open-attachment "10.1016/0893-9659(89)90079-7")
 ;; (mjr-zotero-db-cache-open-attachment "7JU94X7V")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun mjr-zotero-db-cache-open-zotero (match-specifier)
+(defun mjr-zotero-db-cache-open-zotero (match-specifier &optional no-error)
   "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use the Zotero connector switch to zotero and select the found entry."
-  (interactive (list (or (and transient-mark-mode (region-active-p) (mark) (buffer-substring-no-properties (region-beginning) (region-end)))
-                         (error "mjr-zotero-db-cache-open-zotero: Region not marked!"))))
-  (browse-url (concat "zotero://select/items/0_" (car (mjr-zotero-db-cache-search-unique match-specifier)))))
+  (interactive (list (mjr-zotero-match-specifier-at-point)))
+  (when-let ((item-key (if no-error
+                           (ignore-errors (car (mjr-zotero-db-cache-search-unique match-specifier)))
+                           (car (mjr-zotero-db-cache-search-unique match-specifier)))))
+    (browse-url (concat "zotero://select/items/0_" item-key))
+    t))
 
 ;; (mjr-zotero-db-cache-open-zotero "10.1016/0893-9659(89)90079-7")
 ;; (mjr-zotero-db-cache-open-zotero "7JU94X7V")
