@@ -75,6 +75,3 @@ The easiest way to install mjr-zotero is to pull it directly from github:
      (package-vc-install (list 'mjr-zotero
                           :url "https://github.com/richmit/mjr-zotero"
                           :rev 'newest))
-
-Be sure to install and load any packages required by any of the methods included on `mjr-zotero-methods`.  For example several of the built in
-methods require things like: `thingatpt` & `browse-url`.
