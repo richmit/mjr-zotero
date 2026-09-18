@@ -24,11 +24,10 @@ sophisticated searching and data manipulation wholly within Emacs. These are the
  - `mjr-zotero-db-cache-search`          Sophisticated meta data searching with arbitrarily complex boolean expressions
  - `mjr-zotero-db-cache-sort`            Sort a list of entries
  - `mjr-zotero-db-cache-search-unique`   Like `mjr-zotero-db-cache-search`, but errors if results are not a single entry
- - `mjr-zotero-db-cache-search-unique-p` Return non-NIL if a match-specifier results in one and only one matching result
  - `mjr-zotero-db-cache-populate`        Empty the Emacs Zotero DB cache, and then fill it with fresh data from Zotero
- - `mjr-zotero-db-cache-update`          Designed for automatic updates to `mjr-zotero-db-cache` when Zotero data changes.
- - `mjr-zotero-db-cache-open-attachment` Find unique matching object in `mjr-zotero-db-cache`, and open it's primary attachment
- - `mjr-zotero-db-cache-open-zotero`     Find unique matching object in `mjr-zotero-db-cache`, and open it in Zotero
+ - `mjr-zotero-db-cache-update`          Used for automatic `mjr-zotero-db-cache` updates
+ - `mjr-zotero-db-cache-open-attachment` Search for an entry in `mjr-zotero-db-cache`, and open it's attachment
+ - `mjr-zotero-db-cache-open-zotero`     Search for an entry in `mjr-zotero-db-cache`, and open it in Zotero
 
 The next level of functionality works directly with the Zotero Local API.  The intent is to provide a low friction interface to the Zotero Local API for
 programmatic use.  These functions form the ground work for the higher level functions mentioned above.  I expect these functions are rarely called directly

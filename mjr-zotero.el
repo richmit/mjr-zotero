@@ -52,11 +52,10 @@
 ;;  - `mjr-zotero-db-cache-search`          Sophisticated meta data searching with arbitrarily complex boolean expressions
 ;;  - `mjr-zotero-db-cache-sort`            Sort a list of entries
 ;;  - `mjr-zotero-db-cache-search-unique`   Like `mjr-zotero-db-cache-search`, but errors if results are not a single entry
-;;  - `mjr-zotero-db-cache-search-unique-p` Return non-NIL if a match-specifier results in one and only one matching result
 ;;  - `mjr-zotero-db-cache-populate`        Empty the Emacs Zotero DB cache, and then fill it with fresh data from Zotero
-;;  - `mjr-zotero-db-cache-update`          Designed for automatic updates to `mjr-zotero-db-cache` when Zotero data changes.
-;;  - `mjr-zotero-db-cache-open-attachment` Find unique matching object in `mjr-zotero-db-cache`, and open it's primary attachment
-;;  - `mjr-zotero-db-cache-open-zotero`     Find unique matching object in `mjr-zotero-db-cache`, and open it in Zotero
+;;  - `mjr-zotero-db-cache-update`          Used for automatic `mjr-zotero-db-cache` updates
+;;  - `mjr-zotero-db-cache-open-attachment` Search for an entry in `mjr-zotero-db-cache`, and open it's attachment
+;;  - `mjr-zotero-db-cache-open-zotero`     Search for an entry in `mjr-zotero-db-cache`, and open it in Zotero
 ;; 
 ;; The next level of functionality works directly with the Zotero Local API.  The intent is to provide a low friction interface to the Zotero Local API for
 ;; programmatic use.  These functions form the ground work for the higher level functions mentioned above.  I expect these functions are rarely called directly
@@ -417,7 +416,8 @@ TAG & Q are strings in the Zotero local API syntax.  For example, search for ite
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-local-api-open-attachment (item-key)
-  "Vsit the URL for the primary attachment of the given Zotero object via the Zotero Local API."
+  "Vsit the URL for the primary attachment of the given Zotero object via the Zotero Local API.
+WARNING: This will sometimes open the wrong attachment.  It should have a way to let the user select which attachment."
   (if-let* ((attachment-url (mjr-zotero-recursive-getum 'error 'string (mjr-zotero-local-api-get-entry item-key) "links" "attachment" "href"))
             (attachment-id  (replace-regexp-in-string "^.*/" "" attachment-url))
             (enclosure-url  (mjr-zotero-recursive-getum 'error 'string (mjr-zotero-local-api-get-entry attachment-id) "links" "enclosure" "href")))
@@ -681,35 +681,6 @@ This function returns a list with a single entry for each argument."
 ;; ("5KZ82Z3K")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun mjr-zotero-db-cache-search-unique-p (match-specifier)
-  "Like `mjr-zotero-db-cache-search-unique' but takes a match-specifier argument and returns NIL on non-unique results."
-  (and-let* ((  match-specifier)
-             (r (mjr-zotero-db-cache-search match-specifier))
-             (  (listp r))
-             (  (null (cdr r))))))
-
-;; (mjr-zotero-db-cache-search-unique-p '("key" "M2BXF445"))
-;; t
-;;
-;; (mjr-zotero-db-cache-search-unique-p '(and ("key" "M2BXF445") '("key" "A7CKANL9")))
-;; nil
-;;
-;; (mjr-zotero-db-cache-search-unique-p '(or ("key" "M2BXF445") '("key" "A7CKANL9")))
-;; nil
-;;
-;; (mjr-zotero-db-cache-search-unique-p "X9FA49XE")
-;; t
-;;
-;; (mjr-zotero-db-cache-search-unique-p "10.1142/7200")
-;; t
-;;
-;; (mjr-zotero-db-cache-search-unique-p "978-981-283-924-4")
-;; t
-;;
-;; (mjr-zotero-db-cache-search-unique-p "0-7167-1480-9")
-;; t
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defcustom mjr-zotero-db-cache-sort-multi-keys '(("data" "creators" 0 "lastName")
                                                  ("data" "date")
                                                  ("data" "title"))
@@ -809,7 +780,7 @@ Cached bibliographic entries:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-db-cache-open-attachment (match-specifier)
-  "Vsit the URL for the primary attachment of unique Zotero object that matches MATCH-SPECIFIER."
+  "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use `mjr-zotero-local-api-open-attachment' to open it's attachment."
   (interactive (list (or (and transient-mark-mode (region-active-p) (mark) (buffer-substring-no-properties (region-beginning) (region-end)))
                          (error "mjr-zotero-db-cache-open-attachment: Region not marked!"))))
   (mjr-zotero-local-api-open-attachment (gethash "key" (car (mjr-zotero-db-cache-search-unique match-specifier)))))
@@ -819,7 +790,7 @@ Cached bibliographic entries:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-db-cache-open-zotero (match-specifier)
-  "Switch to Zotero and select the Zotero object that matches MATCH-SPECIFIER -- requires the Zotero connector."
+  "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use the Zotero connector switch to zotero and select the found entry."
   (interactive (list (or (and transient-mark-mode (region-active-p) (mark) (buffer-substring-no-properties (region-beginning) (region-end)))
                          (error "mjr-zotero-db-cache-open-zotero: Region not marked!"))))
   (browse-url (concat "zotero://select/items/0_" (car (mjr-zotero-db-cache-search-unique match-specifier)))))
