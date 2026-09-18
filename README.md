@@ -50,10 +50,10 @@ the functions above.
 
 ## Performance
 
-The following observations are made in reference to a 2020 vantage laptop against a Zotero instance with 20K entries.
+The following observations are made in reference to a 2020 vintage laptop against a Zotero instance with 20K entries.
 
- - `mjr-zotero-db-cache-populate` can pull 2500 include=data entries per second into Emacs via the local API from a single API call.
- - `mjr-zotero-db-cache-populate` performance drops to 130 entries per second (a 20x hit) if we use include=data,bib with APA style
+ - `mjr-zotero-db-cache-populate` can pull 2500 include=data entries per second into Emacs
+ - `mjr-zotero-db-cache-populate` include=data,bib drops performance to 130 entries per second (a 20x hit)
  - `mjr-zotero-local-api-make-bib` can generate 16 apa entries per second when not using cache data
  - `mjr-zotero-local-api-make-bib` can generate over 50K apa entries per second when using fully cached data
 
