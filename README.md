@@ -61,7 +61,14 @@ The following observations are made in reference to a 2020 vintage laptop agains
 
 Keep performance in mind when selecting a cache management strategy.
 
-## Generating a bibliography
+## An Example: My Reading List
+
+I keep a combined collection of bibliographies for my we page located at https://www.mitchr.me/SS/reading/index.html which is generated from
+an org-mode file found here: https://www.mitchr.me/SS/reading/index.org
+
+All of the bibliographic entries on this page are tagged in Zotero with "bib:reading".  So we can load the cache using that tag.
+
+## Generating A Bibliography
 
 Two functions directly generate a bibliography.  `mjr-zotero-local-api-make-bib` takes one or more Zotero item-key values and uses the local API to
 dynamically pull formatted bibliographic entries directly from Zotero.  This is a simple and direct method; however, it requires Zotero item-keys for the
