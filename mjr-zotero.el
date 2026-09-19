@@ -91,12 +91,20 @@
 ;;
 ;; Keep performance in mind when selecting a cache management strategy.
 ;;
-;; ** An Example: My Reading List
+;; ** Bibliographies in org-mode HTML exports 
 ;;
-;; I keep a combined collection of bibliographies for my we page located at https://www.mitchr.me/SS/reading/index.html which is generated from
-;; an org-mode file found here: https://www.mitchr.me/SS/reading/index.org
+;; We can produce nice HTML bibliographies with a code block like the following:
 ;;
-;; All of the bibliographic entries on this page are tagged in Zotero with "bib:reading".  So we can load the cache using that tag.
+;;         #+begin_src elisp :exports none :results value :wrap "export html"
+;;         (setq mjr-zotero-db-cache-bib-style "apa-annotated-bibliography")
+;;         (mjr-zotero-db-cache-populate "bib:reading")
+;;         (mjr-zotero-cache-db-make-bib)
+;;         #+end_src
+;;
+;; This will wrap the results in "#+begin_export html" block.
+;;
+;; I use a similar strategy for the combined collection of bibliographies on my web page located at https://www.mitchr.me/SS/reading/index.html which is
+;; generated from an org-mode file found here: https://www.mitchr.me/SS/reading/index.org
 ;;
 ;; ** Generating A Bibliography
 ;;
