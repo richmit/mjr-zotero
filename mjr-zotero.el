@@ -59,21 +59,21 @@
 ;;  - `mjr-zotero-db-cache-update`          Used for automatic `mjr-zotero-db-cache` updates
 ;;  - `mjr-zotero-db-cache-open-attachment` Search for an entry in `mjr-zotero-db-cache`, and open it's attachment
 ;;  - `mjr-zotero-db-cache-open-zotero`     Search for an entry in `mjr-zotero-db-cache`, and open it in Zotero
-;; 
+;;
 ;; The next level of functionality works directly with the Zotero Local API.  The intent is to provide a low friction interface to the Zotero Local API for
 ;; programmatic use.  These functions form the ground work for the higher level functions mentioned above.  I expect these functions are rarely called directly
 ;; by end users.
-;; 
+;;
 ;;  - `mjr-zotero-local-api-get-entry`       Given an item-key, pull the entry from the DB
 ;;  - `mjr-zotero-local-api-open-attachment` Given an item-key, open the item's primary attachment
 ;;  - `mjr-zotero-local-api-bib`        Given an item-key, or list of item-keys, produce a formatted bibliography
 ;;  - `mjr-zotero-local-api-call`            A nice interface to the Zotero local API
 ;;  - `mjr-zotero-local-api-search`          Search via the API (tags & quick only)
 ;;  - `mjr-zotero-local-api-last-update`     Return the date of the most recent modification
-;; 
+;;
 ;; The lowest level of functionality provides what might be called Zotero adjacent operations.  For example working with data structures used by by all of
 ;; the functions above.
-;; 
+;;
 ;;  - `mjr-zotero-recursive-getum`            Pull elements from nested hashes/arrays
 ;;  - `mjr-zotero-element-match`              Match a Zotero entry against criteria (for searches)
 ;;  - `mjr-zotero-connector-link-to-item-key` Convert a "Zotero Connector" item link to an item-key
@@ -95,7 +95,7 @@
 ;;
 ;; I keep a combined collection of bibliographies for my we page located at https://www.mitchr.me/SS/reading/index.html which is generated from
 ;; an org-mode file found here: https://www.mitchr.me/SS/reading/index.org
-;; 
+;;
 ;; All of the bibliographic entries on this page are tagged in Zotero with "bib:reading".  So we can load the cache using that tag.
 ;;
 ;; ** Generating A Bibliography
@@ -130,7 +130,7 @@
   "Convert a string with a Zotero HTML formatted bibliographic entry into plain, ASCII text.  Returns NIL if something goes wrong.
 This function will only convert strings that appear to be Zotero HTML formatted bibliographic entries, and thus should be idempotent under expected use cases.
 Conversion from Unicode to ASCII is limited; however, it gets most of the non-ASCII characters introduced from common Zotero's bibliography styles."
-;; TODO MJR <2026-09-19> mjr-zotero-html-bib-to-plain-text: Convert LaTeX accent constructs to simple ASCII.
+  ;; TODO MJR <2026-09-19> mjr-zotero-html-bib-to-plain-text: Convert LaTeX accent constructs to simple ASCII.
   (when (stringp b)
     (if (not (string-match-p "\\`[[:space:]\n\r]*<div[[:space:]\n\r]*class"))
         b
@@ -224,9 +224,11 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
 (defcustom mjr-zotero-data-key-re (list (list "key"  "zotero://select/items/[0-9]_"         "\\(?1:[0-9A-Z]\\{8\\}\\)")
                                         (list "DOI"  "\\(DOI:\\|doi:\\|https://doi.org/\\)" "\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)")
                                         (list "ISBN" "\\(isbn\\|ISBN\\):"                   "\\(?1:[0-9]\\(-?[0-9]\\)\\{8\\}\\(\\(-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)"))
-  "Regular expressions for identify strings as keys.  
-Each sub-list contains the key, a regex for optional prefix junk, and a regex for the object.  The regular expressions are case sensitive.  One, and only
-one, of the regular expressions must contain an explicitly numbered group 1 -- this is used to identify the value to be matched against the key.  
+  "Regular expressions for identify strings as keys.
+Each sub-list contains the key, a regex for optional prefix junk, and a regex for the object.  The regular expressions are case sensitive.  One, and only one,
+of the regular expressions must contain an explicitly numbered group 1.  This named group 1 is used to identify the value to be matched against the key
+allowing for throw-away identifying text around a key value.  For example: (list "citationKey" "" "cite:\\(?1:[^[:space:]\n\r]+\\)")
+
 The default value recognizes:
   - Zotero item keys (both by themselves and as a Zotero connector URL)
   - ISBN numbers (with or without an ISBN:/isbn: prefix)
@@ -289,7 +291,7 @@ Simple predicates come in three forms:
     - The SUB-KEY-N element of each hash contained in the value for DATA-KEY are tested against SEARCH-STRING-N.
     - The return is non-NIL if ALL sub-* tests are non-NIL for at least one hash in the array
   3) SEARCH-STRING
-     - The DATA-KEY is found by using the first matching regular expressions in `mjr-zotero-data-key-re' 
+     - The DATA-KEY is found by using the first matching regular expressions in `mjr-zotero-data-key-re'
 
 Match-specifiers are expressions containing simple match-specifiers.  For example we can combine two simple match-specifiers
 with an AND like this:
@@ -342,11 +344,11 @@ with an AND like this:
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "X9FA49XE")
 ;; t
 ;; TODO: Add demo for connector URL.
-;; 
+;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "978-981-283-924-4")
 ;; t
 ;; TODO: Add demo for isbn prefixes
-;; 
+;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "9H6MQWM9") "10.48550/arXiv.2108.01999")
 ;; t
 ;; TODO: Add demo for doi prefix and doi.org url
@@ -674,36 +676,36 @@ This function attempts to preform incremental updates:
     - Collection changes (like renaming a collection) are *NOT* synced
     - Deleted items"
   (if (or (null mjr-zotero-db-cache)
-            (not (stringp mjr-zotero-db-cache-populate-timestamp))
-            (string-lessp mjr-zotero-db-cache-populate-timestamp (mjr-zotero-local-api-last-update mjr-zotero-db-cache-update-tag)))
-    (if (or populate mjr-zotero-db-cache-update-populate)
-        (mjr-zotero-db-cache-populate mjr-zotero-db-cache-update-tag)
-        (progn
-          (message "Updating Zotero DB Cache...")
-          (let ((tot (cl-loop for start from 0 by mjr-zotero-db-cache-update-limit
-                              for entries = (let ((tmp (mjr-zotero-local-api-call 'vector "/api/users/0/items/top"
-                                                                                  (cons "sort"    "dateModified")
-                                                                                  (cons "start"   (number-to-string start))
-                                                                                  (cons "limit"   (number-to-string mjr-zotero-db-cache-update-limit))
-                                                                                  (cons "include" (string-join (delete-dups (cons "data" mjr-zotero-db-cache-include)) ","))
-                                                                                  (cons "tag"     mjr-zotero-db-cache-update-tag))))
-                                              (unless tmp
-                                                (mjr-zotero-db-cache-clear)
-                                                (error "mjr-zotero-db-cache-update: Failure in Zotero local API call!")))
-                              for updated = (cl-loop for ne across entries
-                                                     for nd = (mjr-zotero-recursive-getum 'error 'string ne "data" "dateModified")
-                                                     for k  = (gethash "key" ne)
-                                                     for oe = (gethash k mjr-zotero-db-cache)
-                                                     for od = (when oe
-                                                                (mjr-zotero-recursive-getum 'error 'string oe "data" "dateModified"))
-                                                     while (string-lessp od nd)
-                                                     count 1
-                                                     do (puthash k ne mjr-zotero-db-cache))
-                              sum updated
-                              while (< 0 updated))))
-            (setq mjr-zotero-db-cache-populate-timestamp (format-time-string "%FT%T%Z" (current-time) "Z"))
-            (message "Updating Zotero DB Cache... Complete (%d objects updated)!" tot)
-            tot)))))
+          (not (stringp mjr-zotero-db-cache-populate-timestamp))
+          (string-lessp mjr-zotero-db-cache-populate-timestamp (mjr-zotero-local-api-last-update mjr-zotero-db-cache-update-tag)))
+      (if (or populate mjr-zotero-db-cache-update-populate)
+          (mjr-zotero-db-cache-populate mjr-zotero-db-cache-update-tag)
+          (progn
+            (message "Updating Zotero DB Cache...")
+            (let ((tot (cl-loop for start from 0 by mjr-zotero-db-cache-update-limit
+                                for entries = (let ((tmp (mjr-zotero-local-api-call 'vector "/api/users/0/items/top"
+                                                                                    (cons "sort"    "dateModified")
+                                                                                    (cons "start"   (number-to-string start))
+                                                                                    (cons "limit"   (number-to-string mjr-zotero-db-cache-update-limit))
+                                                                                    (cons "include" (string-join (delete-dups (cons "data" mjr-zotero-db-cache-include)) ","))
+                                                                                    (cons "tag"     mjr-zotero-db-cache-update-tag))))
+                                                (unless tmp
+                                                  (mjr-zotero-db-cache-clear)
+                                                  (error "mjr-zotero-db-cache-update: Failure in Zotero local API call!")))
+                                for updated = (cl-loop for ne across entries
+                                                       for nd = (mjr-zotero-recursive-getum 'error 'string ne "data" "dateModified")
+                                                       for k  = (gethash "key" ne)
+                                                       for oe = (gethash k mjr-zotero-db-cache)
+                                                       for od = (when oe
+                                                                  (mjr-zotero-recursive-getum 'error 'string oe "data" "dateModified"))
+                                                       while (string-lessp od nd)
+                                                       count 1
+                                                       do (puthash k ne mjr-zotero-db-cache))
+                                sum updated
+                                while (< 0 updated))))
+              (setq mjr-zotero-db-cache-populate-timestamp (format-time-string "%FT%T%Z" (current-time) "Z"))
+              (message "Updating Zotero DB Cache... Complete (%d objects updated)!" tot)
+              tot)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defcustom mjr-zotero-db-cache-search-auto-refresh nil
@@ -791,7 +793,7 @@ This function returns a list with a single entry for each argument."
   "Return a list of sorted item-keys.
 Each MULTI-KEYS argument is a list applied to `mjr-zotero-recursive-getum' to extract an element of `mjr-zotero-db-cache'.  If NIL, then
 `mjr-zotero-db-cache-sort-multi-keys' will be used. If both are NIL, then the item-key will be used. The sort is lexicographical across all the MULTI-KEYS --
-i.e.  the data is first sorted by the first MULTI-KEYS argument, then by the second, etc...  
+i.e.  the data is first sorted by the first MULTI-KEYS argument, then by the second, etc...
 
 For examples:
  - Sort by by date
@@ -832,10 +834,10 @@ Each element of MATCH-SPECIFIERS is processed via `mjr-zotero-db-cache-search-un
 order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify large bibliographies and `mjr-zotero-db-cache-search' to sort them.
 
  - BIB-STYLE: String with a a bibliographic style known to Zotero.  If NIL, then `mjr-zotero-local-api-bib-style' is used.
-   This value is *only* used when this function calls `mjr-zotero-local-api-bib' for a fresh bibliographic entry.  
+   This value is *only* used when this function calls `mjr-zotero-local-api-bib' for a fresh bibliographic entry.
  - BETWEEN-STRING is used to separate each formatted bibliographic entry produced.
- - PLAIN-TEXT being non-NIL results in the HTML bib entry being converted to plain ASCII text using `mjr-zotero-html-bib-to-plain-text'   
- - If FRESH-BIB is NIL, then bibliographic entries in `mjr-zotero-db-cache' are used and `mjr-zotero-local-api-bib' is only used if 
+ - PLAIN-TEXT being non-NIL results in the HTML bib entry being converted to plain ASCII text using `mjr-zotero-html-bib-to-plain-text'
+ - If FRESH-BIB is NIL, then bibliographic entries in `mjr-zotero-db-cache' are used and `mjr-zotero-local-api-bib' is only used if
    the value is not found in the cache.  When FRESH-BIB is non-NIL, `mjr-zotero-local-api-bib' is used for every entry."
   (let* ((list-of-item-keys (if (null match-specifiers)
                                 (hash-table-keys mjr-zotero-db-cache)
@@ -941,31 +943,31 @@ Used interactively:
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" nil 't)
 ;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
 ;; https://doi.org/10.1016/0893-9659(89)90079-7"
-;; 
+;;
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "apa-annotated-bibliography" 't)
 ;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
 ;; https://doi.org/10.1016/0893-9659(89)90079-7"
-;; 
+;;
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "apa" 't)
 ;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
 ;; https://doi.org/10.1016/0893-9659(89)90079-7"
-;; 
+;;
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "apa-single-spaced" 't)
 ;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
 ;; https://doi.org/10.1016/0893-9659(89)90079-7"
-;; 
+;;
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "chicago-note-bibliography" 't)
 ;; "Bogacki, P., and L. F. Shampine. \"A 3(2) Pair of Runge - Kutta Formulas.\" Applied Mathematics Letters 2, no. 4 (1989): 321-25.
 ;; https://doi.org/10.1016/0893-9659(89)90079-7."
-;; 
+;;
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "modern-language-association" 't)
 ;; "Bogacki, P., and L. F. Shampine. \"A 3(2) Pair of Runge - Kutta Formulas.\" Applied Mathematics Letters, vol. 2, no. 4, Jan. 1989, pp.
 ;; 321-25, https://doi.org/10.1016/0893-9659(89)90079-7."
-;; 
+;;
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "chicago-author-date" 't)
 ;; "Bogacki, P., and L. F. Shampine. 1989. \"A 3(2) Pair of Runge - Kutta Formulas.\" Applied Mathematics Letters 2 (4): 321-25.
 ;; https://doi.org/10.1016/0893-9659(89)90079-7."
-;; 
+;;
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "harvard-cite-them-right" 't)
 ;; "Bogacki, P. and Shampine, L.F. (1989) \"A 3(2) pair of Runge - Kutta formulas,\" Applied Mathematics Letters, 2(4), pp. 321-325. Available
 ;; at: https://doi.org/10.1016/0893-9659(89)90079-7."
@@ -978,7 +980,3 @@ Used interactively:
 ;; (mjr-install-mjr-packages :reinstall :git 'mjr-zotero)
 
 ;;; mjr-zotero.el ends here
-
-
-
-
