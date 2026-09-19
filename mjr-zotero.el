@@ -51,7 +51,7 @@
 ;; sophisticated searching and data manipulation wholly within Emacs. These are the functions an end user is most likely to use.
 ;;
 ;;  - `mjr-zotero-db-cache-bib`             Generate a bibliography -- usually from results of `mjr-zotero-db-cache-search`
-;;  - `mjr-zotero-db-cache-bib-interactive' Interactive version of `mjr-zotero-db-cache-bib` for single item bibliographies
+;;  - `mjr-zotero-db-cache-bib-interactive' Interactive version of `mjr-zotero-db-cache-bib` 
 ;;  - `mjr-zotero-db-cache-search`          Sophisticated meta data searching with arbitrarily complex boolean expressions
 ;;  - `mjr-zotero-db-cache-sort`            Sort a list of entries
 ;;  - `mjr-zotero-db-cache-search-unique`   Like `mjr-zotero-db-cache-search`, but errors if results are not a single entry
@@ -66,7 +66,7 @@
 ;;
 ;;  - `mjr-zotero-local-api-get-entry`       Given an item-key, pull the entry from the DB
 ;;  - `mjr-zotero-local-api-open-attachment` Given an item-key, open the item's primary attachment
-;;  - `mjr-zotero-local-api-bib`        Given an item-key, or list of item-keys, produce a formatted bibliography
+;;  - `mjr-zotero-local-api-bib`             Given an item-key, or list of item-keys, produce a formatted bibliography
 ;;  - `mjr-zotero-local-api-call`            A nice interface to the Zotero local API
 ;;  - `mjr-zotero-local-api-search`          Search via the API (tags & quick only)
 ;;  - `mjr-zotero-local-api-last-update`     Return the date of the most recent modification
