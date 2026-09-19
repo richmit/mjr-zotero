@@ -221,11 +221,12 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defcustom mjr-zotero-data-key-re (list (list "key"  "zotero://select/items/[0-9]_"         "[0-9A-Z]\\{8\\}")
-                                        (list "DOI"  "\\(DOI:\\|doi:\\|https://doi.org/\\)" "10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}")
-                                        (list "ISBN" "\\(isbn\\|ISBN\\):"                   "[0-9]\\(-?[0-9]\\)\\{8\\}\\(\\(-?[0-9]\\)\\{3\\}\\)?-?[0-9]"))
+(defcustom mjr-zotero-data-key-re (list (list "key"  "zotero://select/items/[0-9]_"         "\\(?1:[0-9A-Z]\\{8\\}\\)")
+                                        (list "DOI"  "\\(DOI:\\|doi:\\|https://doi.org/\\)" "\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)")
+                                        (list "ISBN" "\\(isbn\\|ISBN\\):"                   "\\(?1:[0-9]\\(-?[0-9]\\)\\{8\\}\\(\\(-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)"))
   "Regular expressions for identify strings as keys.  
-Each sub-list contains the key, a regex for optional prefix junk, and a regex for the object.  The regular expressions are case sensitive.
+Each sub-list contains the key, a regex for optional prefix junk, and a regex for the object.  The regular expressions are case sensitive.  One, and only
+one, of the regular expressions must contain an explicitly numbered group 1 -- this is used to identify the value to be matched against the key.  
 The default value recognizes:
   - Zotero item keys (both by themselves and as a Zotero connector URL)
   - ISBN numbers (with or without an ISBN:/isbn: prefix)
@@ -235,11 +236,11 @@ The default value recognizes:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-match-specifier-at-point ()
-"Return the marked region or a string that looks like a key value.  Return NIL if nothing is found."
+  "Return the marked region or a string that looks like a key value.  Return NIL if nothing is found."
   (or (and transient-mark-mode (region-active-p) (mark) (buffer-substring-no-properties (region-beginning) (region-end)))
       (let ((case-fold-search nil))
         (cl-loop for (k p v) in mjr-zotero-data-key-re
-                 for m = (and (thing-at-point-looking-at (concat "\\b\\(?1:" p "\\)?\\(?2:" v "\\)\\b") 100) (match-string 2))
+                 for m = (and (thing-at-point-looking-at (concat "\\b\\(" p "\\)?\\(" v "\\)\\b") 100) (match-string 1))
                  when m
                  do (cl-return (substring-no-properties m))))
       (error "mjr-zotero-match-specifier-at-point: Unable to find match-specifier (no marked region or recognized key near point)!")))
@@ -301,8 +302,8 @@ with an AND like this:
     (when (stringp match-specifier)
       (if-let ((ms (cl-loop for (k p v) in mjr-zotero-data-key-re
                             when (let ((case-fold-search nil))
-                                   (string-match (concat "\\`\\(?1:" p "\\)?\\(?2:" v "\\)\\'") match-specifier))
-                            do (cl-return (list mjr-zotero-element-match-default-predicate k (match-string 2 match-specifier))))))
+                                   (string-match (concat "\\`\\(" p "\\)?\\(" v "\\)\\'") match-specifier))
+                            do (cl-return (list mjr-zotero-element-match-default-predicate k (match-string 1 match-specifier))))))
           (setq match-specifier ms)
         (error "mjr-zotero-element-match: Unable to determine data key from search string: %s" match-specifier)))
     ;; Test for match
@@ -969,6 +970,8 @@ Used interactively:
 ;; "Bogacki, P. and Shampine, L.F. (1989) \"A 3(2) pair of Runge - Kutta formulas,\" Applied Mathematics Letters, 2(4), pp. 321-325. Available
 ;; at: https://doi.org/10.1016/0893-9659(89)90079-7."
 
+;; ;; Here is one I don't have in Zotero:
+;; 10.1016/0771-050X(80)90013-3
 
 (provide 'mjr-zotero)
 
