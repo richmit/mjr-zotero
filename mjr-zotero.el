@@ -50,7 +50,8 @@
 ;; The highest level functions work with a cache of Zotero data synced from a Zotero instance via the local API.  This collection of tools enables
 ;; sophisticated searching and data manipulation wholly within Emacs. These are the functions an end user is most likely to use.
 ;;
-;;  - `mjr-zotero-db-cache-make-bib`        Generate a bibliography -- usually from results of `mjr-zotero-db-cache-search`
+;;  - `mjr-zotero-db-cache-bib`             Generate a bibliography -- usually from results of `mjr-zotero-db-cache-search`
+;;  - `mjr-zotero-db-cache-bib-interactive' Interactive version of `mjr-zotero-db-cache-bib` for single item bibliographies
 ;;  - `mjr-zotero-db-cache-search`          Sophisticated meta data searching with arbitrarily complex boolean expressions
 ;;  - `mjr-zotero-db-cache-sort`            Sort a list of entries
 ;;  - `mjr-zotero-db-cache-search-unique`   Like `mjr-zotero-db-cache-search`, but errors if results are not a single entry
@@ -65,7 +66,7 @@
 ;; 
 ;;  - `mjr-zotero-local-api-get-entry`       Given an item-key, pull the entry from the DB
 ;;  - `mjr-zotero-local-api-open-attachment` Given an item-key, open the item's primary attachment
-;;  - `mjr-zotero-local-api-make-bib`        Given an item-key, or list of item-keys, produce a formatted bibliography
+;;  - `mjr-zotero-local-api-bib`        Given an item-key, or list of item-keys, produce a formatted bibliography
 ;;  - `mjr-zotero-local-api-call`            A nice interface to the Zotero local API
 ;;  - `mjr-zotero-local-api-search`          Search via the API (tags & quick only)
 ;;  - `mjr-zotero-local-api-last-update`     Return the date of the most recent modification
@@ -77,6 +78,7 @@
 ;;  - `mjr-zotero-element-match`              Match a Zotero entry against criteria (for searches)
 ;;  - `mjr-zotero-connector-link-to-item-key` Convert a "Zotero Connector" item link to an item-key
 ;;  - `mjr-zotero-looks-like-item-key`        Return non-NIL if the given object looks like a Zotero item-id
+;;  - `mjr-zotero-html-bib-to-plain-text'     Convert HTML bibliographic entries to plain text
 ;;
 ;; ** Performance
 ;;
@@ -84,8 +86,8 @@
 ;;
 ;;  - `mjr-zotero-db-cache-populate' can pull 2500 include=data entries per second into Emacs
 ;;  - `mjr-zotero-db-cache-populate' include=data,bib drops performance to 130 entries per second (a 20x hit)
-;;  - `mjr-zotero-local-api-make-bib' can generate 16 apa entries per second when not using cache data
-;;  - `mjr-zotero-local-api-make-bib' can generate over 50K apa entries per second when using fully cached data
+;;  - `mjr-zotero-local-api-bib' can generate 16 apa entries per second when not using cache data
+;;  - `mjr-zotero-local-api-bib' can generate over 50K apa entries per second when using fully cached data
 ;;
 ;; Keep performance in mind when selecting a cache management strategy.
 ;;
@@ -98,10 +100,10 @@
 ;;
 ;; ** Generating A Bibliography
 ;;
-;; Two functions directly generate a bibliography.  `mjr-zotero-local-api-make-bib' takes one or more Zotero item-key values and uses the local API to
+;; Two functions directly generate a bibliography.  `mjr-zotero-local-api-bib' takes one or more Zotero item-key values and uses the local API to
 ;; dynamically pull formatted bibliographic entries directly from Zotero.  This is a simple and direct method; however, it requires Zotero item-keys for the
 ;; entries.  This can be problematic because Zotero item-keys are not consistent across different instances of Zotero, and pulling them out of Zotero requires
-;; some effort.  `mjr-zotero-db-cache-make-bib' takes one or more match-specifiers generates the bibliography using data in the `mjr-zotero-db-cache'.
+;; some effort.  `mjr-zotero-db-cache-bib' takes one or more match-specifiers generates the bibliography using data in the `mjr-zotero-db-cache'.
 ;;
 ;; ** Installing
 ;;
@@ -122,6 +124,31 @@
 ;; mjr-zotero
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun mjr-zotero-html-bib-to-plain-text (b)
+  "Convert a string with a Zotero HTML formatted bibliographic entry into plain, ASCII text.  Returns NIL if something goes wrong.
+This function will only convert strings that appear to be Zotero HTML formatted bibliographic entries, and thus should be idempotent under expected use cases.
+Conversion from Unicode to ASCII is limited; however, it gets most of the non-ASCII characters introduced from common Zotero's bibliography styles."
+;; TODO MJR <2026-09-19> mjr-zotero-html-bib-to-plain-text: Convert LaTeX accent constructs to simple ASCII.
+  (when (stringp b)
+    (if (not (string-match-p "\\`[[:space:]\n\r]*<div[[:space:]\n\r]*class"))
+        b
+        (let ((s (with-temp-buffer
+                   (insert b)
+                   (shr-render-region (point-min) (point-max))
+                   (buffer-substring-no-properties (point-min) (point-max)))))
+          (when (and (stringp s) (< 0 (length s)))
+            (setq s (string-trim s))
+            (dolist (p '((#x2013 . "-")
+                         (#x2014 . "-")
+                         (#x2019 . "'")
+                         (#x2018 . "'")
+                         (#x201c . "\"")
+                         (#x201D . "\"")
+                         (#x00f6 . "o")))
+              (setq s (string-replace (string (car p)) (cdr p) s)))
+            s)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-recursive-getum (error-handler expected-type dat-o-dat &rest rest)
@@ -289,7 +316,7 @@ with an AND like this:
                  (search-bits  (cddr match-specifier))
                  (predicate    (gethash match-method mjr-zotero-string-predicates)))
             (when (eq 0 (length search-bits))
-              (error "mjr-zotero-element-match: No match specified provided!"))
+              (error "mjr-zotero-element-match: No match vlaue provided!"))
             (pcase (type-of data-value)
               ('symbol  (and (null data-value) (eq match-method :missing)))
               ('vector  (if (cdr search-bits)
@@ -487,16 +514,32 @@ See `mjr-zotero-local-api-search' for additional information regarding the synta
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defcustom mjr-zotero-local-api-bib-style "apa-annotated-bibliography"
-  "bibliography style used by `mjr-zotero-db-cache-make-bib' and `mjr-zotero-local-api-make-bib'.
-My favorites:
-  - apa-annotated-bibliography ... Great for annotated bibliographies on the web (we can use CSS to style this to single space)
-  - apa .......................... Regular bibliographies on the web (we can use CSS to style this to single space)
-  - apa-single-spaced ............ For print use where we can't use CSS to style the results as easily."
+  "bibliography style used by `mjr-zotero-db-cache-bib' and `mjr-zotero-local-api-bib'."
   :type '(choice (const nil) string)
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun mjr-zotero-local-api-make-bib (item-key-or-list-of-item-keys &optional bib-style between-string)
+(defcustom mjr-zotero-prompt-bib-styles (list "apa-annotated-bibliography"
+                                              "apa"
+                                              "apa-single-spaced"
+                                              "chicago-note-bibliography"
+                                              "modern-language-association"
+                                              "chicago-author-date"
+                                              "harvard-cite-them-right")
+  "List of bibliography styles that appear in interactive prompts.
+The default includes the following:
+  - apa .......................... My go-to most of the time.  Best for on the web where we can adjust it with CSS.
+  - apa-annotated-bibliography ... Best for annotated bibliographies on the web where we adjust it with CSS (Not built in)
+  - apa-single-spaced ............ Best for print use where we can't use CSS (Not built in)
+  - chicago-note-bibliography .... This is the default style used by Zotero
+  - chicago-author-date .......... It's still Chicago, but more APA-like
+  - modern-language-association .. The one I used while at university
+  - harvard-cite-them-right ..... Similar to APA but uses a bit more space."
+  :type '(repeat string)
+  :group 'mjr-zotero)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun mjr-zotero-local-api-bib (item-key-or-list-of-item-keys &optional bib-style between-string plain-text)
   "Generate a formatted bibliographic entry for an item via the Zotero Local API.
 Uses `mjr-zotero-local-api-bib-style' if BIB-STYLE is not provided or is NIL."
   (mapconcat (lambda (x) (let* ((e (mjr-zotero-local-api-call 'hash-table
@@ -505,16 +548,19 @@ Uses `mjr-zotero-local-api-bib-style' if BIB-STYLE is not provided or is NIL."
                                                               (cons "style" (or bib-style mjr-zotero-local-api-bib-style))))
                                 (b (if e
                                        (gethash "bib" e)
-                                       (error "mjr-zotero-local-api-make-bib: Local API call failed"))))
+                                       (error "mjr-zotero-local-api-bib: Local API call failed"))))
                            (unless (and b (stringp b) (not (string-empty-p b)))
-                             (error "mjr-zotero-local-api-make-bib: Unable to generate formatted bibliographic entry."))
-                           b))
+                             (error "mjr-zotero-local-api-bib: Unable to generate formatted bibliographic entry."))
+                           (if plain-text
+                               (or (mjr-zotero-html-bib-to-plain-text b)
+                                   (error "mjr-zotero-db-cache-bib: Plain-Text conversion failed for %s!" b))
+                               b)))
              (if (listp item-key-or-list-of-item-keys)
                  item-key-or-list-of-item-keys
                  (list item-key-or-list-of-item-keys))
              (or between-string "\n\n")))
 
-;; (mjr-zotero-local-api-make-bib "M2BXF445")
+;; (mjr-zotero-local-api-bib "M2BXF445")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -779,55 +825,59 @@ For examples:
 ;; ("39Q8I3ZG" "E5Q8EIIZ" "Z7YQAJJ9" "JT9P48NQ")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun mjr-zotero-db-cache-make-bib (match-specifiers &optional bib-style between-string fresh-bib)
+(defun mjr-zotero-db-cache-bib (match-specifiers &optional bib-style between-string fresh-bib plain-text)
   "Take a list of MATCH-SPECIFIERS, and generate a bibliography as a string.
 Each element of MATCH-SPECIFIERS is processed via `mjr-zotero-db-cache-search-unique' to produce an item-key.  The entries will be processed and output in the
 order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify large bibliographies and `mjr-zotero-db-cache-search' to sort them.
 
-The value for BIB-STYLE should be a bibliographic style known to Zotero.  It is used when when this function calls `mjr-zotero-local-api-make-bib'
-to create a fresh bibliographic entry.  If BIB-STYLE is NIL, then `mjr-zotero-local-api-bib-style' is used.
-
-BETWEEN-STRING is used to separate each formatted bibliographic entry produced.
-
-Cached bibliographic entries:
-  - If `mjr-zotero-db-cache' contains a formatted bibliographic entry, then it is used unless FRESH-BIB is non-NIL
-  - Fresh bibliographic entries are created by `mjr-zotero-local-api-make-bib', and the results are stored in the `mjr-zotero-db-cache'"
-  (let ((list-of-item-keys (if (null match-specifiers)
-                               (hash-table-keys mjr-zotero-db-cache)
-                               (mapcar (lambda (x) (car (mjr-zotero-db-cache-search-unique x))) match-specifiers))))
-    (string-join (cl-loop for k in list-of-item-keys
-                          for e = (gethash k mjr-zotero-db-cache)
-                          for d = (gethash "data" e)
-                          for b = (let ((bc (unless fresh-bib
-                                              (gethash "bib" d))))
-                                    (if (and bc (stringp bc) (not (string-empty-p bc)))
-                                        bc
-                                        (let ((ba (mjr-zotero-local-api-make-bib k bib-style)))
-                                          (if (and ba (stringp ba) (not (string-empty-p bc)))
-                                              (puthash "bib" ba d)
-                                              (error "mjr-zotero-db-cache-make-bib: Unable to produce bibliographic entry for %s!" k)))))
-                          collect b)
-                 (or between-string "\n\n"))))
+ - BIB-STYLE: String with a a bibliographic style known to Zotero.  If NIL, then `mjr-zotero-local-api-bib-style' is used.
+   This value is *only* used when this function calls `mjr-zotero-local-api-bib' for a fresh bibliographic entry.  
+ - BETWEEN-STRING is used to separate each formatted bibliographic entry produced.
+ - PLAIN-TEXT being non-NIL results in the HTML bib entry being converted to plain ASCII text using `mjr-zotero-html-bib-to-plain-text'   
+ - If FRESH-BIB is NIL, then bibliographic entries in `mjr-zotero-db-cache' are used and `mjr-zotero-local-api-bib' is only used if 
+   the value is not found in the cache.  When FRESH-BIB is non-NIL, `mjr-zotero-local-api-bib' is used for every entry."
+  (let* ((list-of-item-keys (if (null match-specifiers)
+                                (hash-table-keys mjr-zotero-db-cache)
+                                (mapcar (lambda (x) (car (mjr-zotero-db-cache-search-unique x))) match-specifiers)))
+         (list-of-bibs      (cl-loop for k in list-of-item-keys
+                                     for e = (gethash k mjr-zotero-db-cache)
+                                     for d = (gethash "data" e)
+                                     for b = (let ((bc (unless fresh-bib
+                                                         (gethash "bib" d))))
+                                               (if (and bc (stringp bc) (not (string-empty-p bc)))
+                                                   bc
+                                                   (let ((ba (mjr-zotero-local-api-bib k bib-style)))
+                                                     (if (and ba (stringp ba) (not (string-empty-p bc)))
+                                                         (puthash "bib" ba d)
+                                                         (error "mjr-zotero-db-cache-bib: Unable to produce bibliographic entry for %s!" k)))))
+                                     collect (if plain-text
+                                                 (or (mjr-zotero-html-bib-to-plain-text b)
+                                                     (error "mjr-zotero-db-cache-bib: Plain-Text conversion failed for %s!" b))
+                                                 b))))
+    (string-join list-of-bibs (or between-string "\n\n"))))
 
 ;; ;; These are all the same:
-;; (mjr-zotero-db-cache-make-bib '(("key" "M2BXF445") ("key" "A7CKANL9")))
-;; (mjr-zotero-db-cache-make-bib '("M2BXF445" "A7CKANL9"))
+;; (mjr-zotero-db-cache-bib '(("key" "M2BXF445") ("key" "A7CKANL9")))
+;;
+;; (mjr-zotero-db-cache-bib '("M2BXF445" "A7CKANL9"))
 ;;
 ;; ;; Identical to the above, but explicitly calling mjr-zotero-db-cache-search-unique
-;; (mjr-zotero-db-cache-make-bib (append (mjr-zotero-db-cache-search-unique  '("key" "M2BXF445")) (mjr-zotero-db-cache-search-unique  '("key" "A7CKANL9"))))
-;; (mjr-zotero-db-cache-make-bib (mjr-zotero-db-cache-search-unique "M2BXF445" "A7CKANL9"))
+;; (mjr-zotero-db-cache-bib (append (mjr-zotero-db-cache-search-unique  '("key" "M2BXF445")) (mjr-zotero-db-cache-search-unique  '("key" "A7CKANL9"))))
+;; (mjr-zotero-db-cache-bib (mjr-zotero-db-cache-search-unique "M2BXF445" "A7CKANL9"))
 ;;
 ;; ;; Like above, but order and uniqueness are not guarnteed
-;; (mjr-zotero-db-cache-make-bib (mjr-zotero-db-cache-search '(or ("key" "M2BXF445") ("key" "A7CKANL9"))))
-;; (mjr-zotero-db-cache-make-bib (mjr-zotero-db-cache-search '(or "M2BXF445" "A7CKANL9")))
+;; (mjr-zotero-db-cache-bib (mjr-zotero-db-cache-search '(or ("key" "M2BXF445") ("key" "A7CKANL9"))))
+;; (mjr-zotero-db-cache-bib (mjr-zotero-db-cache-search '(or "M2BXF445" "A7CKANL9")))
 ;;
 ;; ;; I usually identify a bibliography via a tag:
-;; (mjr-zotero-db-cache-make-bib (mjr-zotero-db-cache-search '("tags" "bib:reading")))
+;; (mjr-zotero-db-cache-bib (mjr-zotero-db-cache-search '("tags" "bib:reading")))
 ;;
 ;; ;; If LIST-OF-ENTRIES-AND-OR-MATCH-SPECIFIERS is NIL, then the entire DB is used.  The following two calls are the same:
-;; (mjr-zotero-db-cache-make-bib (hash-table-values mjr-zotero-db-cache))
-;; (mjr-zotero-db-cache-make-bib (hash-table-keys mjr-zotero-db-cache))
-;; (mjr-zotero-db-cache-make-bib nil)
+;; (mjr-zotero-db-cache-bib (hash-table-values mjr-zotero-db-cache))
+;; (mjr-zotero-db-cache-bib (hash-table-keys mjr-zotero-db-cache))
+;; (mjr-zotero-db-cache-bib nil)
+;;
+;; doi:10.1016/0893-9659(89)90079-7
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-db-cache-open-attachment (match-specifier &optional no-error)
@@ -855,8 +905,77 @@ Cached bibliographic entries:
 ;; (mjr-zotero-db-cache-open-zotero "10.1016/0893-9659(89)90079-7")
 ;; (mjr-zotero-db-cache-open-zotero "7JU94X7V")
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun mjr-zotero-db-cache-bib-interactive (match-specifier &optional bib-style fresh-bib plain-text)
+  "Find the Zotero object with `mjr-zotero-db-cache-search-unique' and generate a text bibliography.
+When run interactively the text is placed on the kill ring and a message is printed.
+Used interactively:
+  - match-specifier is pulled from the buffer using `mjr-zotero-match-specifier-at-point'
+  - Without a prefix argument
+    - BIB-STYLE is NIL which means the value in `mjr-zotero-local-api-bib-style' is used
+    - FRESH-BIB is NIL
+    - PLAIN-TEXT is t
+  - With a prefix argument
+    - BIB-STYLE is queried from the user from options listed in `mjr-zotero-prompt-bib-styles'
+    - FRESH-BIB is t
+    - PLAIN-TEXT is queried from the user"
+  (interactive (list (mjr-zotero-match-specifier-at-point)
+                     (when current-prefix-arg
+                       (if (and (boundp 'ido-everywhere) ido-everywhere)
+                           (ido-completing-read "Bibliography Style: " mjr-zotero-prompt-bib-styles nil nil mjr-zotero-local-api-bib-style)
+                           (completing-read     "Bibliography Style: " mjr-zotero-prompt-bib-styles nil nil mjr-zotero-local-api-bib-style)))
+                     current-prefix-arg
+                     (if current-prefix-arg
+                         (y-or-n-p "Result as plain text? ")
+                         t)))
+  (let ((b (mjr-zotero-db-cache-bib (mjr-zotero-db-cache-search match-specifier) bib-style nil fresh-bib plain-text)))
+    (when (called-interactively-p 'any)
+      (kill-new b)
+      (message "Bibliography (%d chars) placed on kill ring!" (length b)))
+    b))
+
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7")
+;; (mjr-zotero-db-cache-open-zotero "7JU94X7V")
+
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" nil 't)
+;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
+;; https://doi.org/10.1016/0893-9659(89)90079-7"
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "apa-annotated-bibliography" 't)
+;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
+;; https://doi.org/10.1016/0893-9659(89)90079-7"
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "apa" 't)
+;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
+;; https://doi.org/10.1016/0893-9659(89)90079-7"
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "apa-single-spaced" 't)
+;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
+;; https://doi.org/10.1016/0893-9659(89)90079-7"
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "chicago-note-bibliography" 't)
+;; "Bogacki, P., and L. F. Shampine. \"A 3(2) Pair of Runge - Kutta Formulas.\" Applied Mathematics Letters 2, no. 4 (1989): 321-25.
+;; https://doi.org/10.1016/0893-9659(89)90079-7."
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "modern-language-association" 't)
+;; "Bogacki, P., and L. F. Shampine. \"A 3(2) Pair of Runge - Kutta Formulas.\" Applied Mathematics Letters, vol. 2, no. 4, Jan. 1989, pp.
+;; 321-25, https://doi.org/10.1016/0893-9659(89)90079-7."
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "chicago-author-date" 't)
+;; "Bogacki, P., and L. F. Shampine. 1989. \"A 3(2) Pair of Runge - Kutta Formulas.\" Applied Mathematics Letters 2 (4): 321-25.
+;; https://doi.org/10.1016/0893-9659(89)90079-7."
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "harvard-cite-them-right" 't)
+;; "Bogacki, P. and Shampine, L.F. (1989) \"A 3(2) pair of Runge - Kutta formulas,\" Applied Mathematics Letters, 2(4), pp. 321-325. Available
+;; at: https://doi.org/10.1016/0893-9659(89)90079-7."
+
+
 (provide 'mjr-zotero)
 
 ;; (mjr-install-mjr-packages :reinstall :git 'mjr-zotero)
 
 ;;; mjr-zotero.el ends here
+
+
+
+

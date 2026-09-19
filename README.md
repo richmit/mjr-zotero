@@ -22,7 +22,8 @@ The mjr-zotero Emacs package provides three general categories of functionality.
 The highest level functions work with a cache of Zotero data synced from a Zotero instance via the local API.  This collection of tools enables
 sophisticated searching and data manipulation wholly within Emacs. These are the functions an end user is most likely to use.
 
- - `mjr-zotero-db-cache-make-bib`        Generate a bibliography -- usually from results of `mjr-zotero-db-cache-search`
+ - `mjr-zotero-db-cache-bib`             Generate a bibliography -- usually from results of `mjr-zotero-db-cache-search`
+ - `mjr-zotero-db-cache-bib-interactive` Interactive version of `mjr-zotero-db-cache-bib` for single item bibliographies
  - `mjr-zotero-db-cache-search`          Sophisticated meta data searching with arbitrarily complex boolean expressions
  - `mjr-zotero-db-cache-sort`            Sort a list of entries
  - `mjr-zotero-db-cache-search-unique`   Like `mjr-zotero-db-cache-search`, but errors if results are not a single entry
@@ -37,7 +38,7 @@ by end users.
 
  - `mjr-zotero-local-api-get-entry`       Given an item-key, pull the entry from the DB
  - `mjr-zotero-local-api-open-attachment` Given an item-key, open the item's primary attachment
- - `mjr-zotero-local-api-make-bib`        Given an item-key, or list of item-keys, produce a formatted bibliography
+ - `mjr-zotero-local-api-bib`        Given an item-key, or list of item-keys, produce a formatted bibliography
  - `mjr-zotero-local-api-call`            A nice interface to the Zotero local API
  - `mjr-zotero-local-api-search`          Search via the API (tags & quick only)
  - `mjr-zotero-local-api-last-update`     Return the date of the most recent modification
@@ -49,6 +50,7 @@ the functions above.
  - `mjr-zotero-element-match`              Match a Zotero entry against criteria (for searches)
  - `mjr-zotero-connector-link-to-item-key` Convert a "Zotero Connector" item link to an item-key
  - `mjr-zotero-looks-like-item-key`        Return non-NIL if the given object looks like a Zotero item-id
+ - `mjr-zotero-html-bib-to-plain-text`     Convert HTML bibliographic entries to plain text
 
 ## Performance
 
@@ -56,8 +58,8 @@ The following observations are made in reference to a 2020 vintage laptop agains
 
  - `mjr-zotero-db-cache-populate` can pull 2500 include=data entries per second into Emacs
  - `mjr-zotero-db-cache-populate` include=data,bib drops performance to 130 entries per second (a 20x hit)
- - `mjr-zotero-local-api-make-bib` can generate 16 apa entries per second when not using cache data
- - `mjr-zotero-local-api-make-bib` can generate over 50K apa entries per second when using fully cached data
+ - `mjr-zotero-local-api-bib` can generate 16 apa entries per second when not using cache data
+ - `mjr-zotero-local-api-bib` can generate over 50K apa entries per second when using fully cached data
 
 Keep performance in mind when selecting a cache management strategy.
 
@@ -70,10 +72,10 @@ All of the bibliographic entries on this page are tagged in Zotero with "bib:rea
 
 ## Generating A Bibliography
 
-Two functions directly generate a bibliography.  `mjr-zotero-local-api-make-bib` takes one or more Zotero item-key values and uses the local API to
+Two functions directly generate a bibliography.  `mjr-zotero-local-api-bib` takes one or more Zotero item-key values and uses the local API to
 dynamically pull formatted bibliographic entries directly from Zotero.  This is a simple and direct method; however, it requires Zotero item-keys for the
 entries.  This can be problematic because Zotero item-keys are not consistent across different instances of Zotero, and pulling them out of Zotero requires
-some effort.  `mjr-zotero-db-cache-make-bib` takes one or more match-specifiers generates the bibliography using data in the `mjr-zotero-db-cache`.
+some effort.  `mjr-zotero-db-cache-bib` takes one or more match-specifiers generates the bibliography using data in the `mjr-zotero-db-cache`.
 
 ## Installing
 
