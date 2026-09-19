@@ -73,7 +73,7 @@ We can produce nice HTML bibliographies with a code block like the following:
         (mjr-zotero-cache-db-make-bib)
         #+end_src
 
-This will wrap the results in "#+begin_export html" block.
+This will wrap the results in a "#+begin_export html" block.
 
 I use a similar strategy for the combined collection of bibliographies on my web page located at https://www.mitchr.me/SS/reading/index.html which is
 generated from an org-mode file found here: https://www.mitchr.me/SS/reading/index.org
