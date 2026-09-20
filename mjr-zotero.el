@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.1
+;; Version:     1.2
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -673,7 +673,17 @@ See `mjr-zotero-local-api-search' for additional information regarding the synta
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;###autoload
+(defun mjr-zotero-db-cache-state (&optional tag)
+  "Return NIL if the cache is clean, and a keyword representing the state of the cache otherwise.
+Keywords that can be returned:
+ - :old The cache exists and Zotero has been updated since the last sync
+ - :nil The cache is NIL
+ - :bad-date The cache is non-NIL, but the date is malformed"
+  (cond ((null mjr-zotero-db-cache)                                                                   :nil)
+        ((not (stringp mjr-zotero-db-cache-populate-timestamp))                                       :bad-date)
+        ((string-lessp mjr-zotero-db-cache-populate-timestamp (mjr-zotero-local-api-last-update tag)) :old)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-db-cache-update (&optional populate)
   "Update the contents of `mjr-zotero-db-cache' if they are stale.  Returns the number of entries updated or NIL if no update is required.
 This function attempts to preform incremental updates:
@@ -683,37 +693,35 @@ This function attempts to preform incremental updates:
   - Some things not synced -- Use `mjr-zotero-db-cache-clear' to clear the cache so the next update will be a call to `mjr-zotero-db-cache-populate'.
     - Collection changes (like renaming a collection) are *NOT* synced
     - Deleted items"
-  (if (or (null mjr-zotero-db-cache)
-          (not (stringp mjr-zotero-db-cache-populate-timestamp))
-          (string-lessp mjr-zotero-db-cache-populate-timestamp (mjr-zotero-local-api-last-update mjr-zotero-db-cache-update-tag)))
-      (if (or populate mjr-zotero-db-cache-update-populate)
-          (mjr-zotero-db-cache-populate mjr-zotero-db-cache-update-tag)
-          (progn
-            (message "Updating Zotero DB Cache...")
-            (let ((tot (cl-loop for start from 0 by mjr-zotero-db-cache-update-limit
-                                for entries = (let ((tmp (mjr-zotero-local-api-call 'vector "/api/users/0/items/top"
-                                                                                    (cons "sort"    "dateModified")
-                                                                                    (cons "start"   (number-to-string start))
-                                                                                    (cons "limit"   (number-to-string mjr-zotero-db-cache-update-limit))
-                                                                                    (cons "include" (string-join (delete-dups (cons "data" mjr-zotero-db-cache-include)) ","))
-                                                                                    (cons "tag"     mjr-zotero-db-cache-update-tag))))
-                                                (unless tmp
-                                                  (mjr-zotero-db-cache-clear)
-                                                  (error "mjr-zotero-db-cache-update: Failure in Zotero local API call!")))
-                                for updated = (cl-loop for ne across entries
-                                                       for nd = (mjr-zotero-recursive-getum 'error 'string ne "data" "dateModified")
-                                                       for k  = (gethash "key" ne)
-                                                       for oe = (gethash k mjr-zotero-db-cache)
-                                                       for od = (when oe
-                                                                  (mjr-zotero-recursive-getum 'error 'string oe "data" "dateModified"))
-                                                       while (string-lessp od nd)
-                                                       count 1
-                                                       do (puthash k ne mjr-zotero-db-cache))
-                                sum updated
-                                while (< 0 updated))))
-              (setq mjr-zotero-db-cache-populate-timestamp (format-time-string "%FT%T%Z" (current-time) "Z"))
-              (message "Updating Zotero DB Cache... Complete (%d objects updated)!" tot)
-              tot)))))
+  (when-let ((cache-state (mjr-zotero-db-cache-state mjr-zotero-db-cache-update-tag)))
+    (if (or populate mjr-zotero-db-cache-update-populate (member cache-state '(:nil :bad-date)))
+        (mjr-zotero-db-cache-populate mjr-zotero-db-cache-update-tag)
+        (progn
+          (message "Updating Zotero DB Cache...")
+          (let ((tot (cl-loop for start from 0 by mjr-zotero-db-cache-update-limit
+                              for entries = (let ((tmp (mjr-zotero-local-api-call 'vector "/api/users/0/items/top"
+                                                                                  (cons "sort"    "dateModified")
+                                                                                  (cons "start"   (number-to-string start))
+                                                                                  (cons "limit"   (number-to-string mjr-zotero-db-cache-update-limit))
+                                                                                  (cons "include" (string-join (delete-dups (cons "data" mjr-zotero-db-cache-include)) ","))
+                                                                                  (cons "tag"     mjr-zotero-db-cache-update-tag))))
+                                              (unless tmp
+                                                (mjr-zotero-db-cache-clear)
+                                                (error "mjr-zotero-db-cache-update: Failure in Zotero local API call!")))
+                              for updated = (cl-loop for ne across entries
+                                                     for nd = (mjr-zotero-recursive-getum 'error 'string ne "data" "dateModified")
+                                                     for k  = (gethash "key" ne)
+                                                     for oe = (gethash k mjr-zotero-db-cache)
+                                                     for od = (when oe
+                                                                (mjr-zotero-recursive-getum 'error 'string oe "data" "dateModified"))
+                                                     while (string-lessp od nd)
+                                                     count 1
+                                                     do (puthash k ne mjr-zotero-db-cache))
+                              sum updated
+                              while (< 0 updated))))
+            (setq mjr-zotero-db-cache-populate-timestamp (format-time-string "%FT%T%Z" (current-time) "Z"))
+            (message "Updating Zotero DB Cache... Complete (%d objects updated)!" tot)
+            tot)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defcustom mjr-zotero-db-cache-search-auto-refresh nil
@@ -891,6 +899,7 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
 ;; doi:10.1016/0893-9659(89)90079-7
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defun mjr-zotero-db-cache-open-attachment (match-specifier &optional no-error)
   "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use `mjr-zotero-local-api-open-attachment' to open it's attachment."
   (interactive (list (mjr-zotero-match-specifier-at-point)))
@@ -904,6 +913,7 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
 ;; (mjr-zotero-db-cache-open-attachment "7JU94X7V")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defun mjr-zotero-db-cache-open-zotero (match-specifier &optional no-error)
   "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use the Zotero connector switch to zotero and select the found entry."
   (interactive (list (mjr-zotero-match-specifier-at-point)))
@@ -917,6 +927,7 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
 ;; (mjr-zotero-db-cache-open-zotero "7JU94X7V")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defun mjr-zotero-db-cache-bib-interactive (match-specifier &optional bib-style fresh-bib plain-text)
   "Find the Zotero object with `mjr-zotero-db-cache-search-unique' and generate a text bibliography.
 When run interactively the text is placed on the kill ring and a message is printed.
