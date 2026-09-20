@@ -1,4 +1,4 @@
-;;; mjr-zotero.el --- Look up things -*- lexical-binding:t; coding: utf-8; mode:emacs-lisp; fill-column:158 -*-
+;;; mjr-zotero.el --- Zotero Emacs Integration -*- lexical-binding:t; coding: utf-8; mode:emacs-lisp; fill-column:158 -*-
 
 ;; Copyright (c) 2026-2026 Mitch Richling <https://www.mitchr.me>.  All rights reserved.
 ;;
@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.0
+;; Version:     1.1
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -140,7 +140,7 @@ This function will only convert strings that appear to be Zotero HTML formatted 
 Conversion from Unicode to ASCII is limited; however, it gets most of the non-ASCII characters introduced from common Zotero's bibliography styles."
   ;; TODO MJR <2026-09-19> mjr-zotero-html-bib-to-plain-text: Convert LaTeX accent constructs to simple ASCII.
   (when (stringp b)
-    (if (not (string-match-p "\\`[[:space:]\n\r]*<div[[:space:]\n\r]*class"))
+    (if (not (string-match-p "\\`[[:space:]\n\r]*<div[[:space:]\n\r]*class" b))
         b
         (let ((s (with-temp-buffer
                    (insert b)
@@ -235,7 +235,7 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
   "Regular expressions for identify strings as keys.
 Each sub-list contains the key, a regex for optional prefix junk, and a regex for the object.  The regular expressions are case sensitive.  One, and only one,
 of the regular expressions must contain an explicitly numbered group 1.  This named group 1 is used to identify the value to be matched against the key
-allowing for throw-away identifying text around a key value.  For example: (list "citationKey" "" "cite:\\(?1:[^[:space:]\n\r]+\\)")
+allowing for throw-away identifying text around a key value.  For example: (list \"citationKey\" \"\" \"cite:\\(?1:[^[:space:]\\n\\r]+\\)\")
 
 The default value recognizes:
   - Zotero item keys (both by themselves and as a Zotero connector URL)
