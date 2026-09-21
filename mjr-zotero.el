@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.3
+;; Version:     1.4
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -613,7 +613,7 @@ Populating the cache takes time.  Limiting what is loaded into the cache can hel
  - Automatic: Set `mjr-zotero-db-cache-update-tag'")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defvar mjr-zotero-db-cache-populate-timestamp "1972-01-01T01:01:01Z"
+(defvar mjr-zotero-db-cache-timestamp "1972-01-01T01:01:01Z"
   "When `mjr-zotero-db-cache' is non-NIL, contains a string with an update timestamp for `mjr-zotero-db-cache'.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -650,7 +650,7 @@ Note this function makes no use of the custom variable `mjr-zotero-db-cache-upda
                                                     for k = (gethash "key" e)
                                                     do (puthash k e h))
                                            h))
-               (setq mjr-zotero-db-cache-populate-timestamp (format-time-string "%FT%T%Z" (current-time) "Z"))
+               (setq mjr-zotero-db-cache-timestamp (format-time-string "%FT%T%Z" (current-time) "Z"))
                (message "Populating Zotero DB Cache... Complete (%s objects loaded in %f seconds)!" num-elt (float-time (time-since start-time)))
                num-elt)
       (progn (mjr-zotero-db-cache-clear)
@@ -686,8 +686,8 @@ Keywords that can be returned:
  - :nil The cache is NIL
  - :bad-date The cache is non-NIL, but the date is malformed"
   (cond ((null mjr-zotero-db-cache)                                                                   :nil)
-        ((not (stringp mjr-zotero-db-cache-populate-timestamp))                                       :bad-date)
-        ((string-lessp mjr-zotero-db-cache-populate-timestamp (mjr-zotero-local-api-last-update tag)) :old)))
+        ((not (stringp mjr-zotero-db-cache-timestamp))                                       :bad-date)
+        ((string-lessp mjr-zotero-db-cache-timestamp (mjr-zotero-local-api-last-update tag)) :old)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-db-cache-update (&optional populate)
@@ -705,15 +705,15 @@ This function attempts to preform incremental updates:
         (progn
           (message "Updating Zotero DB Cache...")
           (let ((tot (cl-loop for start from 0 by mjr-zotero-db-cache-update-limit
-                              for entries = (let ((tmp (mjr-zotero-local-api-call 'vector "/api/users/0/items/top"
-                                                                                  (cons "sort"    "dateModified")
-                                                                                  (cons "start"   (number-to-string start))
-                                                                                  (cons "limit"   (number-to-string mjr-zotero-db-cache-update-limit))
-                                                                                  (cons "include" (string-join (delete-dups (cons "data" mjr-zotero-db-cache-include)) ","))
-                                                                                  (cons "tag"     mjr-zotero-db-cache-update-tag))))
-                                              (unless tmp
-                                                (mjr-zotero-db-cache-clear)
-                                                (error "mjr-zotero-db-cache-update: Failure in Zotero local API call!")))
+                              for entries = (let ((tmp (ignore-errors (mjr-zotero-local-api-call 'vector "/api/users/0/items/top"
+                                                                                                 (cons "sort"    "dateModified")
+                                                                                                 (cons "start"   (number-to-string start))
+                                                                                                 (cons "limit"   (number-to-string mjr-zotero-db-cache-update-limit))
+                                                                                                 (cons "include" (string-join (delete-dups (cons "data" mjr-zotero-db-cache-include)) ","))
+                                                                                                 (cons "tag"     mjr-zotero-db-cache-update-tag)))))
+                                              (or tmp
+                                                  (progn (mjr-zotero-db-cache-clear)
+                                                         (error "mjr-zotero-db-cache-update: Failure in Zotero local API call!"))))
                               for updated = (cl-loop for ne across entries
                                                      for nd = (mjr-zotero-recursive-getum 'error 'string ne "data" "dateModified")
                                                      for k  = (gethash "key" ne)
@@ -725,7 +725,7 @@ This function attempts to preform incremental updates:
                                                      do (puthash k ne mjr-zotero-db-cache))
                               sum updated
                               while (< 0 updated))))
-            (setq mjr-zotero-db-cache-populate-timestamp (format-time-string "%FT%T%Z" (current-time) "Z"))
+            (setq mjr-zotero-db-cache-timestamp (format-time-string "%FT%T%Z" (current-time) "Z"))
             (message "Updating Zotero DB Cache... Complete (%d objects updated)!" tot)
             tot)))))
 
