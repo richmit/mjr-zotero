@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.2
+;; Version:     1.3
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -138,7 +138,6 @@
   "Convert a string with a Zotero HTML formatted bibliographic entry into plain, ASCII text.  Returns NIL if something goes wrong.
 This function will only convert strings that appear to be Zotero HTML formatted bibliographic entries, and thus should be idempotent under expected use cases.
 Conversion from Unicode to ASCII is limited; however, it gets most of the non-ASCII characters introduced from common Zotero's bibliography styles."
-  ;; TODO MJR <2026-09-19> mjr-zotero-html-bib-to-plain-text: Convert LaTeX accent constructs to simple ASCII.
   (when (stringp b)
     (if (not (string-match-p "\\`[[:space:]\n\r]*<div[[:space:]\n\r]*class" b))
         b
@@ -152,10 +151,17 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
                          (#x2014 . "-")
                          (#x2019 . "'")
                          (#x2018 . "'")
+                         (#x2019 . "'")
+                         (#x00fc . "u")
+                         (#x00f8 . "o")
+                         (#x00e4 . "a")
+                         (#x0161 . "s")
                          (#x201c . "\"")
                          (#x201D . "\"")
                          (#x00f6 . "o")))
               (setq s (string-replace (string (car p)) (cdr p) s)))
+            (setq s (replace-regexp-in-string "\\\\[`'^~=.\"]{\\([a-zA-Z]\\)}" "\\1" s))  ;; Remove LaTeX accents with bracket protected argument
+            (setq s (replace-regexp-in-string "\\\\[`'^~=.\"]\\([a-zA-Z]\\)"   "\\1" s))  ;; Remove LaTeX accents without bracket protected argument
             s)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
