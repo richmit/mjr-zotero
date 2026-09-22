@@ -17,7 +17,7 @@ The first two items can be achieved interactively -- i.e. mark the criteria in t
 
 ## General Package Organization
 
-The mjr-zotero Emacs package provides three general categories of functionality.
+The mjr-zotero Emacs package provides four general categories of functionality.
 
 The highest level functions work with a cache of Zotero data synced from a Zotero instance via the local API.  This collection of tools enables
 sophisticated searching and data manipulation wholly within Emacs. These are the functions an end user is most likely to use.
@@ -30,7 +30,7 @@ sophisticated searching and data manipulation wholly within Emacs. These are the
  - `mjr-zotero-db-cache-populate`        Empty the Emacs Zotero DB cache, and then fill it with fresh data from Zotero
  - `mjr-zotero-db-cache-update`          Used for automatic `mjr-zotero-db-cache` updates
  - `mjr-zotero-db-cache-open-attachment` Search for an entry in `mjr-zotero-db-cache`, and open it's attachment
- - `mjr-zotero-db-cache-open-zotero`     Search for an entry in `mjr-zotero-db-cache`, and open it in Zotero
+ - `mjr-zotero-db-cache-open-item`     Search for an entry in `mjr-zotero-db-cache`, and open it in Zotero
 
 The next level of functionality works directly with the Zotero Local API.  The intent is to provide a low friction interface to the Zotero Local API for
 programmatic use.  These functions form the ground work for the higher level functions mentioned above.  I expect these functions are rarely called directly
@@ -42,6 +42,11 @@ by end users.
  - `mjr-zotero-local-api-call`            A nice interface to the Zotero local API
  - `mjr-zotero-local-api-search`          Search via the API (tags & quick only)
  - `mjr-zotero-local-api-last-update`     Return the date of the most recent modification
+
+The next level of functionality works with the Zotero connector.  
+
+ - `mjr-zotero-connector-link-to-item-key` Extract an item-key from a connector link
+ - `mjr-zotero-connector-open-item`        Open an item in Zotero
 
 The lowest level of functionality provides what might be called Zotero adjacent operations.  For example working with data structures used by by all of
 the functions above.
