@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.5
+;; Version:     1.6
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -194,6 +194,7 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
 ;; "Fortuna"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defun mjr-zotero-looks-like-item-key (something)
   "Return non-NIL if SOMETHING is a string that looks like a Zotero item key"
   (and (stringp something) (let ((case-fold-search nil))
@@ -251,6 +252,7 @@ The default value recognizes:
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defun mjr-zotero-match-specifier-at-point ()
   "Return the match-specifier in the marked region or a string that looks like a key value near the point.  Return NIL if nothing is found.
 When called with an active region, the return is a lisp expression if the active region's contents look like a complete lisp expression and a string
@@ -603,6 +605,7 @@ Uses `mjr-zotero-local-api-bib-style' if BIB-STYLE is not provided or is NIL."
 ;; (mjr-zotero-connector-link-to-item-key "zotero://select/items/0_WHVVHHDH")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defun mjr-zotero-connector-open-item (item-key)
   "Given an item-key, use the Zotero connector to open Zotero and select an item."
     (browse-url (concat "zotero://select/items/0_" item-key)))
