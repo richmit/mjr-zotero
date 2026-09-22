@@ -123,8 +123,11 @@
 ;; The easiest way to install mjr-zotero is to pull it directly from github:
 ;;
 ;;      (package-vc-install (list 'mjr-zotero
-;;                           :url "https://github.com/richmit/mjr-zotero"
-;;                           :rev 'newest))
+;;                                :url "https://github.com/richmit/mjr-zotero"
+;;                                :rev 'newest))
+;;
+;; Note that mjr-thingy-lookeruper (https://github.com/richmit/mjr-thingy-lookeruper) supports this package, so install it too if you wish.
+
 
 ;;; Code:
 
