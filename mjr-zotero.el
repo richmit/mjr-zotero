@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.4
+;; Version:     1.5
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -58,7 +58,7 @@
 ;;  - `mjr-zotero-db-cache-populate`        Empty the Emacs Zotero DB cache, and then fill it with fresh data from Zotero
 ;;  - `mjr-zotero-db-cache-update`          Used for automatic `mjr-zotero-db-cache` updates
 ;;  - `mjr-zotero-db-cache-open-attachment` Search for an entry in `mjr-zotero-db-cache`, and open it's attachment
-;;  - `mjr-zotero-db-cache-open-zotero`     Search for an entry in `mjr-zotero-db-cache`, and open it in Zotero
+;;  - `mjr-zotero-db-cache-open-item`     Search for an entry in `mjr-zotero-db-cache`, and open it in Zotero
 ;;
 ;; The next level of functionality works directly with the Zotero Local API.  The intent is to provide a low friction interface to the Zotero Local API for
 ;; programmatic use.  These functions form the ground work for the higher level functions mentioned above.  I expect these functions are rarely called directly
@@ -252,8 +252,15 @@ The default value recognizes:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-match-specifier-at-point ()
-  "Return the marked region or a string that looks like a key value.  Return NIL if nothing is found."
-  (or (and transient-mark-mode (region-active-p) (mark) (buffer-substring-no-properties (region-beginning) (region-end)))
+  "Return the match-specifier in the marked region or a string that looks like a key value near the point.  Return NIL if nothing is found.
+When called with an active region, the return is a lisp expression if the active region's contents look like a complete lisp expression and a string
+otherwise.  Without an active region the return will be a string (if something that looks like a key value is found), or NIL otherwise."
+  (or (when (and transient-mark-mode (region-active-p) (mark))
+        (let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
+          (when s
+            (if (string-match-p "\\`'?(.*)\\'" s)
+                (car (read-from-string (concat "'" (string-remove-prefix "'" s))))
+                s))))
       (let ((case-fold-search nil))
         (cl-loop for (k p v) in mjr-zotero-data-key-re
                  for m = (and (thing-at-point-looking-at (concat "\\b\\(" p "\\)?\\(" v "\\)\\b") 100) (match-string 1))
@@ -262,7 +269,7 @@ The default value recognizes:
       (error "mjr-zotero-match-specifier-at-point: Unable to find match-specifier (no marked region or recognized key near point)!")))
 
 ;; ;; Some targets for at-point tests
-;; ;; For an interactive demo, try mjr-zotero-db-cache-open-zotero or mjr-zotero-db-cache-open-attachment with these
+;; ;; For an interactive demo, try mjr-zotero-db-cache-open-item or mjr-zotero-db-cache-open-attachment with these
 ;;
 ;; 686PNJGS
 ;; zotero://select/items/0_7JU94X7V
@@ -596,6 +603,13 @@ Uses `mjr-zotero-local-api-bib-style' if BIB-STYLE is not provided or is NIL."
 ;; (mjr-zotero-connector-link-to-item-key "zotero://select/items/0_WHVVHHDH")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun mjr-zotero-connector-open-item (item-key)
+  "Given an item-key, use the Zotero connector to open Zotero and select an item."
+    (browse-url (concat "zotero://select/items/0_" item-key)))
+
+;; (mjr-zotero-connector-open-item "7JU94X7V")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; mjr-zotero-db-cache
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -907,7 +921,9 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
 (defun mjr-zotero-db-cache-open-attachment (match-specifier &optional no-error)
-  "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use `mjr-zotero-local-api-open-attachment' to open it's attachment."
+  "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use `mjr-zotero-local-api-open-attachment' to open it's attachment.
+if MATCH-SPECIFIER matched something in `mjr-zotero-db-cache', the return is non-NIL.  If it didn't match, then NIL is when NO-ERROR is non-NIL and an error
+occurs otherwise."
   (interactive (list (mjr-zotero-match-specifier-at-point)))
   (when-let ((item-key (if no-error
                            (ignore-errors (car (mjr-zotero-db-cache-search-unique match-specifier)))
@@ -920,17 +936,19 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
-(defun mjr-zotero-db-cache-open-zotero (match-specifier &optional no-error)
-  "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use the Zotero connector switch to zotero and select the found entry."
+(defun mjr-zotero-db-cache-open-item (match-specifier &optional no-error)
+  "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use the Zotero connector switch to zotero and select the found entry.
+if MATCH-SPECIFIER matched something in `mjr-zotero-db-cache', the return is non-NIL.  If it didn't match, then NIL is when NO-ERROR is non-NIL and an error
+occurs otherwise."
   (interactive (list (mjr-zotero-match-specifier-at-point)))
   (when-let ((item-key (if no-error
-                           (ignore-errors (car (mjr-zotero-db-cache-search-unique match-specifier)))
-                           (car (mjr-zotero-db-cache-search-unique match-specifier)))))
-    (browse-url (concat "zotero://select/items/0_" item-key))
+                               (ignore-errors (car (mjr-zotero-db-cache-search-unique match-specifier)))
+                               (car (mjr-zotero-db-cache-search-unique match-specifier)))))
+    (mjr-zotero-connector-open-item item-key)
     t))
 
-;; (mjr-zotero-db-cache-open-zotero "10.1016/0893-9659(89)90079-7")
-;; (mjr-zotero-db-cache-open-zotero "7JU94X7V")
+;; (mjr-zotero-db-cache-open-item "10.1016/0893-9659(89)90079-7")
+;; (mjr-zotero-db-cache-open-item "7JU94X7V")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
@@ -963,7 +981,7 @@ Used interactively:
     b))
 
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7")
-;; (mjr-zotero-db-cache-open-zotero "7JU94X7V")
+;; (mjr-zotero-db-cache-open-item "7JU94X7V")
 
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" nil 't)
 ;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
@@ -999,6 +1017,13 @@ Used interactively:
 
 ;; ;; Here is one I don't have in Zotero:
 ;; 10.1016/0771-050X(80)90013-3
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; mjr-zotero-X
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 
 (provide 'mjr-zotero)
 
