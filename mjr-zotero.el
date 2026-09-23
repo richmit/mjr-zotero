@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.10
+;; Version:     1.12
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -300,18 +300,17 @@ The default value recognizes:
   "Return the match-specifier in the marked region or a string that looks like a key value near the point.  Return NIL if nothing is found.
 When called with an active region, the return is a lisp expression if the active region's contents look like a complete lisp expression and a string
 otherwise.  Without an active region the return will be a string (if something that looks like a key value is found), or NIL otherwise."
-  (or (when (and transient-mark-mode (region-active-p) (mark))
-        (let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
-          (when s
-            (if (string-match-p "\\`'?(.*)\\'" s)
-                (car (read-from-string (concat "'" (string-remove-prefix "'" s))))
-                s))))
+  (if (and transient-mark-mode (region-active-p) (mark))
+      (let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
+        (when s
+          (if (string-match-p "\\`'?(.*)\\'" s)
+              (car (read-from-string (concat "'" (string-remove-prefix "'" s))))
+              s)))
       (let ((case-fold-search nil))
         (cl-loop for (k p v) in mjr-zotero-data-key-re
                  for m = (and (thing-at-point-looking-at (concat "\\b\\(" p "\\)?\\(" v "\\)\\b") 100) (match-string 1))
                  when m
-                 do (cl-return (substring-no-properties m))))
-      (error "mjr-zotero-match-specifier-at-point: Unable to find match-specifier (no marked region or recognized key near point)!")))
+                 do (cl-return (substring-no-properties m))))))
 
 ;; ;; Some targets for at-point tests
 ;; ;; For an interactive demo, try mjr-zotero-db-cache-open-item or mjr-zotero-db-cache-open-attachment with these
