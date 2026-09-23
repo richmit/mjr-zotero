@@ -53,9 +53,10 @@ the functions above.
 
  - `mjr-zotero-recursive-getum`            Pull elements from nested hashes/arrays
  - `mjr-zotero-element-match`              Match a Zotero entry against criteria (for searches)
- - `mjr-zotero-connector-link-to-item-key` Convert a "Zotero Connector" item link to an item-key
  - `mjr-zotero-looks-like-item-key`        Return non-NIL if the given object looks like a Zotero item-id
  - `mjr-zotero-html-bib-to-plain-text`     Convert HTML bibliographic entries to plain text
+ - `mjr-zotero-data-key-p`                 Convert a string match-specifier into a list match-specifier
+ - `mjr-zotero-match-specifier-at-point`   Pull a match-specifier from buffer near point
 
 ## Performance
 
@@ -63,8 +64,8 @@ The following observations are made in reference to a 2020 vintage laptop agains
 
  - `mjr-zotero-db-cache-populate` can pull 2500 include=data entries per second into Emacs
  - `mjr-zotero-db-cache-populate` include=data,bib drops performance to 130 entries per second (a 20x hit)
- - `mjr-zotero-local-api-bib` can generate 16 apa entries per second when not using cache data
- - `mjr-zotero-local-api-bib` can generate over 50K apa entries per second when using fully cached data
+ - `mjr-zotero-local-api-bib`     can generate 16 apa entries per second when not using cache data
+ - `mjr-zotero-local-api-bib`     can generate over 50K apa entries per second when using fully cached data
 
 Keep performance in mind when selecting a cache management strategy.
 

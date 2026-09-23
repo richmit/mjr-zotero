@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.8
+;; Version:     1.10
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -81,9 +81,10 @@
 ;;
 ;;  - `mjr-zotero-recursive-getum`            Pull elements from nested hashes/arrays
 ;;  - `mjr-zotero-element-match`              Match a Zotero entry against criteria (for searches)
-;;  - `mjr-zotero-connector-link-to-item-key` Convert a "Zotero Connector" item link to an item-key
 ;;  - `mjr-zotero-looks-like-item-key`        Return non-NIL if the given object looks like a Zotero item-id
 ;;  - `mjr-zotero-html-bib-to-plain-text'     Convert HTML bibliographic entries to plain text
+;;  - `mjr-zotero-data-key-p'                 Convert a string match-specifier into a list match-specifier
+;;  - `mjr-zotero-match-specifier-at-point'   Pull a match-specifier from buffer near point
 ;;
 ;; ** Performance
 ;;
@@ -91,8 +92,8 @@
 ;;
 ;;  - `mjr-zotero-db-cache-populate' can pull 2500 include=data entries per second into Emacs
 ;;  - `mjr-zotero-db-cache-populate' include=data,bib drops performance to 130 entries per second (a 20x hit)
-;;  - `mjr-zotero-local-api-bib' can generate 16 apa entries per second when not using cache data
-;;  - `mjr-zotero-local-api-bib' can generate over 50K apa entries per second when using fully cached data
+;;  - `mjr-zotero-local-api-bib'     can generate 16 apa entries per second when not using cache data
+;;  - `mjr-zotero-local-api-bib'     can generate over 50K apa entries per second when using fully cached data
 ;;
 ;; Keep performance in mind when selecting a cache management strategy.
 ;;
@@ -202,7 +203,6 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
 ;; "Fortuna"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;###autoload
 (defun mjr-zotero-looks-like-item-key (something)
   "Return non-NIL if SOMETHING is a string that looks like a Zotero item key"
   (and (stringp something) (let ((case-fold-search nil))
@@ -260,7 +260,42 @@ The default value recognizes:
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;###autoload
+(defun mjr-zotero-data-key-p (match-specifier)
+  "If MATCH-SPECIFIER is a string and appears to specify a known data-key, then return a cons cell with the key and value.  Otherwise return NIL."
+  (when (stringp match-specifier)
+    (cl-loop for (k p v) in mjr-zotero-data-key-re
+             when (let ((case-fold-search nil))
+                    (string-match (concat "\\`\\(" p "\\)?\\(" v "\\)\\'") match-specifier))
+             do (cl-return (cons k (match-string 1 match-specifier))))))
+
+;; (mjr-zotero-data-key-p "686PNJGS")
+;; ("key" . "686PNJGS")
+;; 
+;; (mjr-zotero-data-key-p "zotero://select/items/0_7JU94X7V")
+;; ("key" . "7JU94X7V")
+;; 
+;; (mjr-zotero-data-key-p "10.1016/0893-9659(89)90079-7")
+;; ("DOI" . "10.1016/0893-9659(89)90079-7")
+;; 
+;; (mjr-zotero-data-key-p "doi:10.1016/0893-9659(89)90079-7")
+;; ("DOI" . "10.1016/0893-9659(89)90079-7")
+;; 
+;; (mjr-zotero-data-key-p "https://doi.org/10.1016/0893-9659(89)90079-7")
+;; ("DOI" . "10.1016/0893-9659(89)90079-7")
+;; 
+;; (mjr-zotero-data-key-p "ISBN:978-0-321-63773-4")
+;; ("ISBN" . "978-0-321-63773-4")
+;; 
+;; (mjr-zotero-data-key-p "isbn:978-0-321-63773-4")
+;; ("ISBN" . "978-0-321-63773-4")
+;; 
+;; (mjr-zotero-data-key-p "978-0-321-63773-4")
+;; ("ISBN" . "978-0-321-63773-4")
+;; 
+;; (mjr-zotero-data-key-p "dog")
+;; nil
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-match-specifier-at-point ()
   "Return the match-specifier in the marked region or a string that looks like a key value near the point.  Return NIL if nothing is found.
 When called with an active region, the return is a lisp expression if the active region's contents look like a complete lisp expression and a string
@@ -332,13 +367,9 @@ with an AND like this:
                   v
                   (format "%s" v))))
     ;; Transform nekked string into a match-specifier list
-    (when (stringp match-specifier)
-      (if-let ((ms (cl-loop for (k p v) in mjr-zotero-data-key-re
-                            when (let ((case-fold-search nil))
-                                   (string-match (concat "\\`\\(" p "\\)?\\(" v "\\)\\'") match-specifier))
-                            do (cl-return (list mjr-zotero-element-match-default-predicate k (match-string 1 match-specifier))))))
-          (setq match-specifier ms)
-        (error "mjr-zotero-element-match: Unable to determine data key from search string: %s" match-specifier)))
+    (if-let ((tmp (mjr-zotero-data-key-p match-specifier)))
+        (setq match-specifier (list mjr-zotero-element-match-default-predicate (car tmp) (cdr tmp)))
+      (error "mjr-zotero-element-match: Unable to determine data key from search string: %s" match-specifier))
     ;; Test for match
     (when (and (listp match-specifier) (not (null match-specifier)))
       (if (stringp (car match-specifier))
