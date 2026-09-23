@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.7
+;; Version:     1.8
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -745,7 +745,7 @@ This function attempts to preform incremental updates:
                                                      for oe = (gethash k mjr-zotero-db-cache)
                                                      for od = (when oe
                                                                 (mjr-zotero-recursive-getum 'error 'string oe "data" "dateModified"))
-                                                     while (string-lessp od nd)
+                                                     while (or (null oe) (string-lessp od nd))
                                                      count 1
                                                      do (puthash k ne mjr-zotero-db-cache))
                               sum updated
