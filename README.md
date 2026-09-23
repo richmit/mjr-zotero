@@ -23,14 +23,14 @@ The highest level functions work with a cache of Zotero data synced from a Zoter
 sophisticated searching and data manipulation wholly within Emacs. These are the functions an end user is most likely to use.
 
  - `mjr-zotero-db-cache-bib`             Generate a bibliography -- usually from results of `mjr-zotero-db-cache-search`
- - `mjr-zotero-db-cache-bib-interactive` Interactive version of `mjr-zotero-db-cache-bib` 
+ - `mjr-zotero-db-cache-bib-interactive` Interactive version of `mjr-zotero-db-cache-bib`
  - `mjr-zotero-db-cache-search`          Sophisticated meta data searching with arbitrarily complex boolean expressions
  - `mjr-zotero-db-cache-sort`            Sort a list of entries
  - `mjr-zotero-db-cache-search-unique`   Like `mjr-zotero-db-cache-search`, but errors if results are not a single entry
  - `mjr-zotero-db-cache-populate`        Empty the Emacs Zotero DB cache, and then fill it with fresh data from Zotero
  - `mjr-zotero-db-cache-update`          Used for automatic `mjr-zotero-db-cache` updates
  - `mjr-zotero-db-cache-open-attachment` Search for an entry in `mjr-zotero-db-cache`, and open it's attachment
- - `mjr-zotero-db-cache-open-item`     Search for an entry in `mjr-zotero-db-cache`, and open it in Zotero
+ - `mjr-zotero-db-cache-open-item`       Search for an entry in `mjr-zotero-db-cache`, and open it in Zotero
 
 The next level of functionality works directly with the Zotero Local API.  The intent is to provide a low friction interface to the Zotero Local API for
 programmatic use.  These functions form the ground work for the higher level functions mentioned above.  I expect these functions are rarely called directly
@@ -43,7 +43,7 @@ by end users.
  - `mjr-zotero-local-api-search`          Search via the API (tags & quick only)
  - `mjr-zotero-local-api-last-update`     Return the date of the most recent modification
 
-The next level of functionality works with the Zotero connector.  
+The next level of functionality works with the Zotero connector.
 
  - `mjr-zotero-connector-link-to-item-key` Extract an item-key from a connector link
  - `mjr-zotero-connector-open-item`        Open an item in Zotero
@@ -69,7 +69,7 @@ The following observations are made in reference to a 2020 vintage laptop agains
 
 Keep performance in mind when selecting a cache management strategy.
 
-## Bibliographies in org-mode HTML exports 
+## Bibliographies in org-mode HTML exports
 
 We can produce nice HTML bibliographies with a code block like the following:
 

@@ -1,4 +1,4 @@
-;;; mjr-zotero.el --- Zotero Emacs Integration -*- lexical-binding:t; coding: utf-8; mode:emacs-lisp; fill-column:158 -*-
+;;; mjr-zotero.el --- Zotero Emacs Integration -*- lexical-binding:t; coding:utf-8; mode:emacs-lisp; fill-column:158 -*-
 
 ;; Copyright (c) 2026-2026 Mitch Richling <https://www.mitchr.me>.  All rights reserved.
 ;;
@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.12
+;; Version:     1.14
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -50,38 +50,38 @@
 ;; The highest level functions work with a cache of Zotero data synced from a Zotero instance via the local API.  This collection of tools enables
 ;; sophisticated searching and data manipulation wholly within Emacs. These are the functions an end user is most likely to use.
 ;;
-;;  - `mjr-zotero-db-cache-bib`             Generate a bibliography -- usually from results of `mjr-zotero-db-cache-search`
-;;  - `mjr-zotero-db-cache-bib-interactive' Interactive version of `mjr-zotero-db-cache-bib` 
-;;  - `mjr-zotero-db-cache-search`          Sophisticated meta data searching with arbitrarily complex boolean expressions
-;;  - `mjr-zotero-db-cache-sort`            Sort a list of entries
-;;  - `mjr-zotero-db-cache-search-unique`   Like `mjr-zotero-db-cache-search`, but errors if results are not a single entry
-;;  - `mjr-zotero-db-cache-populate`        Empty the Emacs Zotero DB cache, and then fill it with fresh data from Zotero
-;;  - `mjr-zotero-db-cache-update`          Used for automatic `mjr-zotero-db-cache` updates
-;;  - `mjr-zotero-db-cache-open-attachment` Search for an entry in `mjr-zotero-db-cache`, and open it's attachment
-;;  - `mjr-zotero-db-cache-open-item`     Search for an entry in `mjr-zotero-db-cache`, and open it in Zotero
+;;  - `mjr-zotero-db-cache-bib'             Generate a bibliography -- usually from results of `mjr-zotero-db-cache-search'
+;;  - `mjr-zotero-db-cache-bib-interactive' Interactive version of `mjr-zotero-db-cache-bib'
+;;  - `mjr-zotero-db-cache-search'          Sophisticated meta data searching with arbitrarily complex boolean expressions
+;;  - `mjr-zotero-db-cache-sort'            Sort a list of entries
+;;  - `mjr-zotero-db-cache-search-unique'   Like `mjr-zotero-db-cache-search', but errors if results are not a single entry
+;;  - `mjr-zotero-db-cache-populate'        Empty the Emacs Zotero DB cache, and then fill it with fresh data from Zotero
+;;  - `mjr-zotero-db-cache-update'          Used for automatic `mjr-zotero-db-cache' updates
+;;  - `mjr-zotero-db-cache-open-attachment' Search for an entry in `mjr-zotero-db-cache', and open it's attachment
+;;  - `mjr-zotero-db-cache-open-item'       Search for an entry in `mjr-zotero-db-cache', and open it in Zotero
 ;;
 ;; The next level of functionality works directly with the Zotero Local API.  The intent is to provide a low friction interface to the Zotero Local API for
 ;; programmatic use.  These functions form the ground work for the higher level functions mentioned above.  I expect these functions are rarely called directly
 ;; by end users.
 ;;
-;;  - `mjr-zotero-local-api-get-entry`       Given an item-key, pull the entry from the DB
-;;  - `mjr-zotero-local-api-open-attachment` Given an item-key, open the item's primary attachment
-;;  - `mjr-zotero-local-api-bib`             Given an item-key, or list of item-keys, produce a formatted bibliography
-;;  - `mjr-zotero-local-api-call`            A nice interface to the Zotero local API
-;;  - `mjr-zotero-local-api-search`          Search via the API (tags & quick only)
-;;  - `mjr-zotero-local-api-last-update`     Return the date of the most recent modification
+;;  - `mjr-zotero-local-api-get-entry'       Given an item-key, pull the entry from the DB
+;;  - `mjr-zotero-local-api-open-attachment' Given an item-key, open the item's primary attachment
+;;  - `mjr-zotero-local-api-bib'             Given an item-key, or list of item-keys, produce a formatted bibliography
+;;  - `mjr-zotero-local-api-call'            A nice interface to the Zotero local API
+;;  - `mjr-zotero-local-api-search'          Search via the API (tags & quick only)
+;;  - `mjr-zotero-local-api-last-update'     Return the date of the most recent modification
 ;;
-;; The next level of functionality works with the Zotero connector.  
+;; The next level of functionality works with the Zotero connector.
 ;;
-;;  - `mjr-zotero-connector-link-to-item-key` Extract an item-key from a connector link
-;;  - `mjr-zotero-connector-open-item`        Open an item in Zotero
+;;  - `mjr-zotero-connector-link-to-item-key' Extract an item-key from a connector link
+;;  - `mjr-zotero-connector-open-item'        Open an item in Zotero
 ;;
 ;; The lowest level of functionality provides what might be called Zotero adjacent operations.  For example working with data structures used by by all of
 ;; the functions above.
 ;;
-;;  - `mjr-zotero-recursive-getum`            Pull elements from nested hashes/arrays
-;;  - `mjr-zotero-element-match`              Match a Zotero entry against criteria (for searches)
-;;  - `mjr-zotero-looks-like-item-key`        Return non-NIL if the given object looks like a Zotero item-id
+;;  - `mjr-zotero-recursive-getum'            Pull elements from nested hashes/arrays
+;;  - `mjr-zotero-element-match'              Match a Zotero entry against criteria (for searches)
+;;  - `mjr-zotero-looks-like-item-key'        Return non-NIL if the given object looks like a Zotero item-id
 ;;  - `mjr-zotero-html-bib-to-plain-text'     Convert HTML bibliographic entries to plain text
 ;;  - `mjr-zotero-data-key-p'                 Convert a string match-specifier into a list match-specifier
 ;;  - `mjr-zotero-match-specifier-at-point'   Pull a match-specifier from buffer near point
@@ -97,7 +97,7 @@
 ;;
 ;; Keep performance in mind when selecting a cache management strategy.
 ;;
-;; ** Bibliographies in org-mode HTML exports 
+;; ** Bibliographies in org-mode HTML exports
 ;;
 ;; We can produce nice HTML bibliographies with a code block like the following:
 ;;
@@ -178,7 +178,7 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
   "Recursively pull hash elements/array values from a nested collection of hash/array members.
  - ERROR-HANDLER should be NIL or a function like `error' or `message'
    - If NIL no error checking is preformed and NIL is returned if an error is encountered
-   - If ERROR-HANDLER is a function that dosen't throw an error, then the return upon error will be NIL
+   - If ERROR-HANDLER is a function that doesn't throw an error, then the return upon error will be NIL
  - EXPECTED-TYPE should be NIL or a type symbol
    - If NIL, then no error checking is performed on the final type returned
    - If non-NIL, then the result type is checked and ERROR-HANDLER is executed."
@@ -270,28 +270,28 @@ The default value recognizes:
 
 ;; (mjr-zotero-data-key-p "686PNJGS")
 ;; ("key" . "686PNJGS")
-;; 
+;;
 ;; (mjr-zotero-data-key-p "zotero://select/items/0_7JU94X7V")
 ;; ("key" . "7JU94X7V")
-;; 
+;;
 ;; (mjr-zotero-data-key-p "10.1016/0893-9659(89)90079-7")
 ;; ("DOI" . "10.1016/0893-9659(89)90079-7")
-;; 
+;;
 ;; (mjr-zotero-data-key-p "doi:10.1016/0893-9659(89)90079-7")
 ;; ("DOI" . "10.1016/0893-9659(89)90079-7")
-;; 
+;;
 ;; (mjr-zotero-data-key-p "https://doi.org/10.1016/0893-9659(89)90079-7")
 ;; ("DOI" . "10.1016/0893-9659(89)90079-7")
-;; 
+;;
 ;; (mjr-zotero-data-key-p "ISBN:978-0-321-63773-4")
 ;; ("ISBN" . "978-0-321-63773-4")
-;; 
+;;
 ;; (mjr-zotero-data-key-p "isbn:978-0-321-63773-4")
 ;; ("ISBN" . "978-0-321-63773-4")
-;; 
+;;
 ;; (mjr-zotero-data-key-p "978-0-321-63773-4")
 ;; ("ISBN" . "978-0-321-63773-4")
-;; 
+;;
 ;; (mjr-zotero-data-key-p "dog")
 ;; nil
 
@@ -380,7 +380,7 @@ with an AND like this:
                  (search-bits  (cddr match-specifier))
                  (predicate    (gethash match-method mjr-zotero-string-predicates)))
             (when (eq 0 (length search-bits))
-              (error "mjr-zotero-element-match: No match vlaue provided!"))
+              (error "mjr-zotero-element-match: No match value provided!"))
             (pcase (type-of data-value)
               ('symbol  (and (null data-value) (eq match-method :missing)))
               ('vector  (if (cdr search-bits)
@@ -533,7 +533,7 @@ The Zotero Local API must be enabled in the Zotero client:
   "Pull item data for Zotero object with the given ITEM-KEY via the Zotero Local API."
   (if-let ((responce (mjr-zotero-local-api-call 'hash-table (list "/api/users/0/items" item-key))))
       responce
-    (error "mjr-zotero-local-api-get-entry: Somthing went wrong")))
+    (error "mjr-zotero-local-api-get-entry: Something went wrong")))
 
 ;; (mjr-zotero-local-api-get-entry "UEQBISIW")
 ;; (mjr-zotero-local-api-get-entry "WHVVHHDH")
@@ -545,7 +545,7 @@ The Zotero Local API must be enabled in the Zotero client:
 TAG & Q are strings in the Zotero local API syntax.  For example, search for items with the tag \"art\" or \"calc\" with a TAG value of \"art||calc\"."
   (if-let ((responce (mjr-zotero-local-api-call 'vector "/api/users/0/items/top" (cons "tag" tag) (cons "q" q) (when everything '("qmode" . "everything")))))
       responce
-    (error "mjr-zotero-local-api-get-entry: Somthing went wrong")))
+    (error "mjr-zotero-local-api-get-entry: Something went wrong")))
 
 ;; (length (mjr-zotero-local-api-search nil "Murray" nil))
 ;; 10
@@ -558,7 +558,7 @@ TAG & Q are strings in the Zotero local API syntax.  For example, search for ite
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-local-api-open-attachment (item-key)
-  "Vsit the URL for the primary attachment of the given Zotero object via the Zotero Local API.
+  "Visit the URL for the primary attachment of the given Zotero object via the Zotero Local API.
 WARNING: This will sometimes open the wrong attachment.  It should have a way to let the user select which attachment."
   (if-let* ((attachment-url (mjr-zotero-recursive-getum nil 'string (mjr-zotero-local-api-get-entry item-key) "links" "attachment" "href"))
             (attachment-id  (replace-regexp-in-string "^.*/" "" attachment-url))
@@ -583,8 +583,8 @@ See `mjr-zotero-local-api-search' for additional information regarding the synta
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defcustom mjr-zotero-prompt-bib-styles (list "apa-annotated-bibliography"
-                                              "apa"
+(defcustom mjr-zotero-prompt-bib-styles (list "apa"
+                                              "apa-annotated-bibliography"
                                               "apa-single-spaced"
                                               "chicago-note-bibliography"
                                               "modern-language-association"
@@ -598,7 +598,7 @@ The default includes the following:
   - chicago-note-bibliography .... This is the default style used by Zotero
   - chicago-author-date .......... It's still Chicago, but more APA-like
   - modern-language-association .. The one I used while at university
-  - harvard-cite-them-right ..... Similar to APA but uses a bit more space."
+  - harvard-cite-them-right ...... Similar to APA but uses a bit more space."
   :type '(repeat string)
   :group 'mjr-zotero)
 
@@ -617,7 +617,7 @@ Uses `mjr-zotero-local-api-bib-style' if BIB-STYLE is not provided or is NIL."
                              (error "mjr-zotero-local-api-bib: Unable to generate formatted bibliographic entry."))
                            (if plain-text
                                (or (mjr-zotero-html-bib-to-plain-text b)
-                                   (error "mjr-zotero-db-cache-bib: Plain-Text conversion failed for %s!" b))
+                                   (error "mjr-zotero-local-api-bib: Plain-Text conversion failed for %s!" b))
                                b)))
              (if (listp item-key-or-list-of-item-keys)
                  item-key-or-list-of-item-keys
@@ -694,7 +694,7 @@ Return is the number of records found.
 See `mjr-zotero-local-api-search' for additional information regarding the syntax used for the TAG argument.
 Note this function makes no use of the custom variable `mjr-zotero-db-cache-update-tag'."
   (let ((start-time (current-time)))
-    (message "Populating Zotero DB Cache...")
+    (message "mjr-zotero-db-cache-populate: Populating Zotero DB Cache...")
     (if-let* ((result  (mjr-zotero-local-api-call 'vector "/api/users/0/items/top"
                                                   (cons "tag" tag)
                                                   (cons "include" (string-join (delete-dups (cons "data" mjr-zotero-db-cache-include)) ","))))
@@ -706,10 +706,10 @@ Note this function makes no use of the custom variable `mjr-zotero-db-cache-upda
                                                     do (puthash k e h))
                                            h))
                (setq mjr-zotero-db-cache-timestamp (format-time-string "%FT%T%Z" (current-time) "Z"))
-               (message "Populating Zotero DB Cache... Complete (%s objects loaded in %f seconds)!" num-elt (float-time (time-since start-time)))
+               (message "mjr-zotero-db-cache-populate: Populating Zotero DB Cache... Complete (%s objects in %f seconds)!" num-elt (float-time (time-since start-time)))
                num-elt)
       (progn (mjr-zotero-db-cache-clear)
-             (error "Populating Zotero DB Cache... Failed!")))))
+             (error "mjr-zotero-db-cache-populate: Populating Zotero DB Cache... Failed!")))))
 
 ;; (mjr-zotero-db-cache-populate "bib:reading")
 
@@ -740,7 +740,7 @@ Keywords that can be returned:
  - :old The cache exists and Zotero has been updated since the last sync
  - :nil The cache is NIL
  - :bad-date The cache is non-NIL, but the date is malformed"
-  (cond ((null mjr-zotero-db-cache)                                                                   :nil)
+  (cond ((null mjr-zotero-db-cache)                                                          :nil)
         ((not (stringp mjr-zotero-db-cache-timestamp))                                       :bad-date)
         ((string-lessp mjr-zotero-db-cache-timestamp (mjr-zotero-local-api-last-update tag)) :old)))
 
@@ -758,7 +758,7 @@ This function attempts to preform incremental updates:
     (if (or populate mjr-zotero-db-cache-update-populate (member cache-state '(:nil :bad-date)))
         (mjr-zotero-db-cache-populate mjr-zotero-db-cache-update-tag)
         (progn
-          (message "Updating Zotero DB Cache...")
+          (message "mjr-zotero-db-cache-update: Updating Zotero DB Cache...")
           (let ((tot (cl-loop for start from 0 by mjr-zotero-db-cache-update-limit
                               for entries = (let ((tmp (ignore-errors (mjr-zotero-local-api-call 'vector "/api/users/0/items/top"
                                                                                                  (cons "sort"    "dateModified")
@@ -781,7 +781,7 @@ This function attempts to preform incremental updates:
                               sum updated
                               while (< 0 updated))))
             (setq mjr-zotero-db-cache-timestamp (format-time-string "%FT%T%Z" (current-time) "Z"))
-            (message "Updating Zotero DB Cache... Complete (%d objects updated)!" tot)
+            (message "mjr-zotero-db-cache-update: Updating Zotero DB Cache... Complete (%d objects updated)!" tot)
             tot)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -861,7 +861,7 @@ This function returns a list with a single entry for each argument."
 (defcustom mjr-zotero-db-cache-sort-multi-keys '(("data" "creators" 0 "lastName")
                                                  ("data" "date")
                                                  ("data" "title"))
-  "The function `mjr-zotero-db-cache-sort-multi-keys' uses this as the default value for the MULTI-KEYS argument."
+  "Used by the function `mjr-zotero-db-cache-sort-multi-keys' as the default value for its MULTI-KEYS argument."
   :type '(repeat (repeat string))
   :group 'mjr-zotero)
 
@@ -945,7 +945,7 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
 ;; (mjr-zotero-db-cache-bib (append (mjr-zotero-db-cache-search-unique  '("key" "M2BXF445")) (mjr-zotero-db-cache-search-unique  '("key" "A7CKANL9"))))
 ;; (mjr-zotero-db-cache-bib (mjr-zotero-db-cache-search-unique "M2BXF445" "A7CKANL9"))
 ;;
-;; ;; Like above, but order and uniqueness are not guarnteed
+;; ;; Like above, but order and uniqueness are not guaranteed
 ;; (mjr-zotero-db-cache-bib (mjr-zotero-db-cache-search '(or ("key" "M2BXF445") ("key" "A7CKANL9"))))
 ;; (mjr-zotero-db-cache-bib (mjr-zotero-db-cache-search '(or "M2BXF445" "A7CKANL9")))
 ;;
@@ -994,15 +994,15 @@ occurs otherwise."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
 (defun mjr-zotero-db-cache-bib-interactive (match-specifier &optional bib-style fresh-bib plain-text)
-  "Find the Zotero object with `mjr-zotero-db-cache-search-unique' and generate a text bibliography.
-When run interactively the text is placed on the kill ring and a message is printed.
+  "Find the Zotero object with `mjr-zotero-db-cache-search-unique' and generate a bibliography (placed on the kill ring when run interactively).
 Used interactively:
-  - match-specifier is pulled from the buffer using `mjr-zotero-match-specifier-at-point'
   - Without a prefix argument
+    - MATCH-SPECIFIER is pulled from the buffer using `mjr-zotero-match-specifier-at-point'
     - BIB-STYLE is NIL which means the value in `mjr-zotero-local-api-bib-style' is used
     - FRESH-BIB is NIL
     - PLAIN-TEXT is t
   - With a prefix argument
+    - MATCH-SPECIFIER is pulled from the buffer using `mjr-zotero-match-specifier-at-point'
     - BIB-STYLE is queried from the user from options listed in `mjr-zotero-prompt-bib-styles'
     - FRESH-BIB is t
     - PLAIN-TEXT is queried from the user"
@@ -1058,13 +1058,6 @@ Used interactively:
 
 ;; ;; Here is one I don't have in Zotero:
 ;; 10.1016/0771-050X(80)90013-3
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; mjr-zotero-X
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 
 (provide 'mjr-zotero)
 
