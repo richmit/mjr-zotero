@@ -11,7 +11,9 @@ My primary use cases are to do the following based on ISBNs, DOIs, Zotero item-i
 
   - Open Zotero and select an item
   - Open Zotero PDF attachments without using the Zotero connector
-  - Create bibliographies for org-mode documents exported to HTML
+  - Create bibliographies 
+    - Inside source code comments and strings
+    - As blocks of HTML (which I include in HTML & org-mode documents)
 
 The first two items can be achieved interactively -- i.e. mark the criteria in the buffer, and run the function.
 
@@ -42,6 +44,7 @@ by end users.
  - `mjr-zotero-local-api-call`            A nice interface to the Zotero local API
  - `mjr-zotero-local-api-search`          Search via the API (tags & quick only)
  - `mjr-zotero-local-api-last-update`     Return the date of the most recent modification
+ - `mjr-zotero-local-api-export`          Create a bibliography data file
 
 The next level of functionality works with the Zotero connector.
 
@@ -69,9 +72,18 @@ The following observations are made in reference to a 2020 vintage laptop agains
 
 Keep performance in mind when selecting a cache management strategy.
 
-## Bibliographies in org-mode HTML exports
+## Bibliographies in org-mode
 
-We can produce nice HTML bibliographies with a code block like the following:
+This package provides very little direct support for org-mode bibliographies other than the following:
+
+ - A nice way to look up citations & documents (especially in conjunction with mjr-thingy-lookeruper)
+ - Produce bibliography files used by org-mode
+
+## Bibliographies in org-mode HTML blocks
+
+org-mode has very nice support for traditional bibliographies; however, for some applications I prefer a more manual approach.  For example, I maintain a
+"Reading List" on my web page (https://www.mitchr.me/SS/reading/index.html) which essentially a collection of bibliographies organized by topic.  The HTML
+is generated from an org-mode file (https://www.mitchr.me/SS/reading/index.org) using code similar to the following:
 
         #+begin_src elisp :exports none :results value :wrap "export html"
         (setq mjr-zotero-db-cache-bib-style "apa-annotated-bibliography")
@@ -80,9 +92,6 @@ We can produce nice HTML bibliographies with a code block like the following:
         #+end_src
 
 This will wrap the results in a "#+begin_export html" block.
-
-I use a similar strategy for the combined collection of bibliographies on my web page located at https://www.mitchr.me/SS/reading/index.html which is
-generated from an org-mode file found here: https://www.mitchr.me/SS/reading/index.org
 
 ## Generating A Bibliography
 

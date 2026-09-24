@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.14
+;; Version:     1.16
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -39,7 +39,9 @@
 ;;
 ;;   - Open Zotero and select an item
 ;;   - Open Zotero PDF attachments without using the Zotero connector
-;;   - Create bibliographies for org-mode documents exported to HTML
+;;   - Create bibliographies 
+;;     - Inside source code comments and strings
+;;     - As blocks of HTML (which I include in HTML & org-mode documents)
 ;;
 ;; The first two items can be achieved interactively -- i.e. mark the criteria in the buffer, and run the function.
 ;;
@@ -70,6 +72,7 @@
 ;;  - `mjr-zotero-local-api-call'            A nice interface to the Zotero local API
 ;;  - `mjr-zotero-local-api-search'          Search via the API (tags & quick only)
 ;;  - `mjr-zotero-local-api-last-update'     Return the date of the most recent modification
+;;  - `mjr-zotero-local-api-export'          Create a bibliography data file
 ;;
 ;; The next level of functionality works with the Zotero connector.
 ;;
@@ -97,9 +100,18 @@
 ;;
 ;; Keep performance in mind when selecting a cache management strategy.
 ;;
-;; ** Bibliographies in org-mode HTML exports
+;; ** Bibliographies in org-mode
 ;;
-;; We can produce nice HTML bibliographies with a code block like the following:
+;; This package provides very little direct support for org-mode bibliographies other than the following:
+;;
+;;  - A nice way to look up citations & documents (especially in conjunction with mjr-thingy-lookeruper)
+;;  - Produce bibliography files used by org-mode
+;;
+;; ** Bibliographies in org-mode HTML blocks
+;;
+;; org-mode has very nice support for traditional bibliographies; however, for some applications I prefer a more manual approach.  For example, I maintain a
+;; "Reading List" on my web page (https://www.mitchr.me/SS/reading/index.html) which essentially a collection of bibliographies organized by topic.  The HTML
+;; is generated from an org-mode file (https://www.mitchr.me/SS/reading/index.org) using code similar to the following:
 ;;
 ;;         #+begin_src elisp :exports none :results value :wrap "export html"
 ;;         (setq mjr-zotero-db-cache-bib-style "apa-annotated-bibliography")
@@ -108,9 +120,6 @@
 ;;         #+end_src
 ;;
 ;; This will wrap the results in a "#+begin_export html" block.
-;;
-;; I use a similar strategy for the combined collection of bibliographies on my web page located at https://www.mitchr.me/SS/reading/index.html which is
-;; generated from an org-mode file found here: https://www.mitchr.me/SS/reading/index.org
 ;;
 ;; ** Generating A Bibliography
 ;;
@@ -577,13 +586,13 @@ See `mjr-zotero-local-api-search' for additional information regarding the synta
                               0 "data" "dateModified"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defcustom mjr-zotero-local-api-bib-style "apa-annotated-bibliography"
+(defcustom mjr-zotero-local-api-bib-style-default "apa-annotated-bibliography"
   "bibliography style used by `mjr-zotero-db-cache-bib' and `mjr-zotero-local-api-bib'."
   :type '(choice (const nil) string)
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defcustom mjr-zotero-prompt-bib-styles (list "apa"
+(defcustom mjr-zotero-prompt-bib-style-prompt (list "apa"
                                               "apa-annotated-bibliography"
                                               "apa-single-spaced"
                                               "chicago-note-bibliography"
@@ -605,11 +614,11 @@ The default includes the following:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-local-api-bib (item-key-or-list-of-item-keys &optional bib-style between-string plain-text)
   "Generate a formatted bibliographic entry for an item via the Zotero Local API.
-Uses `mjr-zotero-local-api-bib-style' if BIB-STYLE is not provided or is NIL."
+Uses `mjr-zotero-local-api-bib-style-default' if BIB-STYLE is not provided or is NIL."
   (mapconcat (lambda (x) (let* ((e (mjr-zotero-local-api-call 'hash-table
                                                               (concat "/api/users/0/items/" x)
                                                               (cons "include" "bib")
-                                                              (cons "style" (or bib-style mjr-zotero-local-api-bib-style))))
+                                                              (cons "style" (or bib-style mjr-zotero-local-api-bib-style-default))))
                                 (b (if e
                                        (gethash "bib" e)
                                        (error "mjr-zotero-local-api-bib: Local API call failed"))))
@@ -625,6 +634,46 @@ Uses `mjr-zotero-local-api-bib-style' if BIB-STYLE is not provided or is NIL."
              (or between-string "\n\n")))
 
 ;; (mjr-zotero-local-api-bib "M2BXF445")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
+(defcustom mjr-zotero-local-api-export-format-default "csljson"
+  "A list of export formats used for prompts."
+  :type 'string
+  :group 'mjr-zotero)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
+(defcustom mjr-zotero-local-api-export-format-prompt '("csljson"
+                                           "biblatex"
+                                           "bibtex")
+  "A list of export formats used for prompts."
+  :type '(repeat string)
+  :group 'mjr-zotero)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
+(defun mjr-zotero-local-api-export (filename &optional tag format)
+  "Export a bibliography file.
+Arguments:
+ - TAG ..... If missing or NIL, then `mjr-zotero-local-api-tag-default' is used.   
+ - FORMAT .. If missing or NIL, then `mjr-zotero-local-api-export-format-default' is used.
+When run interactively, all the user is prompted for all argument values.  See `mjr-zotero-local-api-export-format-prompt'."
+  (interactive (list (if (and (boundp 'ido-everywhere) ido-everywhere)
+                         (read-file-name     "Output File: ") 
+                         (ido-read-file-name "Output File: "))
+                     (read-string "Tag: " mjr-zotero-local-api-tag-default)
+                     (if (and (boundp 'ido-everywhere) ido-everywhere)
+                         (ido-completing-read "Export format: " mjr-zotero-local-api-export-format-prompt nil nil mjr-zotero-local-api-export-format-default)
+                         (completing-read     "Export format: " mjr-zotero-local-api-export-format-prompt nil nil mjr-zotero-local-api-export-format-default))))
+  (if-let* ((result (mjr-zotero-local-api-call nil "/api/users/0/items/top"
+                                               (cons "format" (or format mjr-zotero-local-api-export-format-default))
+                                               (cons "tag"    (or tag    mjr-zotero-default-tag))))
+            (       (stringp result)))
+      (write-region result nil filename nil nil nil nil)
+    (error "mjr-zotero-local-api-export: Something went wrong pulling data from Zotero")))
+
+;; (mjr-zotero-local-api-export "foo.bib" "bib:zoo" "biblatex")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -665,7 +714,7 @@ Cache management:
 
 Populating the cache takes time.  Limiting what is loaded into the cache can help.
  - Manual: Use the TAG argument of `mjr-zotero-db-cache-populate' & `mjr-zotero-db-cache-update'
- - Automatic: Set `mjr-zotero-db-cache-update-tag'")
+ - Automatic: Set `mjr-zotero-local-api-tag-default'")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar mjr-zotero-db-cache-timestamp "1972-01-01T01:01:01Z"
@@ -692,7 +741,7 @@ If missing \"data\", then it will be added before use.  The inclusion of \"bib\"
   "Populate `mjr-zotero-db-cache' with fresh data via the local API.
 Return is the number of records found.
 See `mjr-zotero-local-api-search' for additional information regarding the syntax used for the TAG argument.
-Note this function makes no use of the custom variable `mjr-zotero-db-cache-update-tag'."
+Note this function makes no use of the custom variable `mjr-zotero-local-api-tag-default'."
   (let ((start-time (current-time)))
     (message "mjr-zotero-db-cache-populate: Populating Zotero DB Cache...")
     (if-let* ((result  (mjr-zotero-local-api-call 'vector "/api/users/0/items/top"
@@ -714,7 +763,7 @@ Note this function makes no use of the custom variable `mjr-zotero-db-cache-upda
 ;; (mjr-zotero-db-cache-populate "bib:reading")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defcustom mjr-zotero-db-cache-update-tag nil
+(defcustom mjr-zotero-local-api-tag-default nil
   "Used by `mjr-zotero-db-cache-update'.
 If this is a string, then it uses the local Zotero API syntax -- See: `mjr-zotero-local-api-search' for more information.
 See `mjr-zotero-local-api-search' for additional information regarding the syntax used for the TAG argument."
@@ -754,9 +803,9 @@ This function attempts to preform incremental updates:
   - Some things not synced -- Use `mjr-zotero-db-cache-clear' to clear the cache so the next update will be a call to `mjr-zotero-db-cache-populate'.
     - Collection changes (like renaming a collection) are *NOT* synced
     - Deleted items"
-  (when-let ((cache-state (mjr-zotero-db-cache-state mjr-zotero-db-cache-update-tag)))
+  (when-let ((cache-state (mjr-zotero-db-cache-state mjr-zotero-local-api-tag-default)))
     (if (or populate mjr-zotero-db-cache-update-populate (member cache-state '(:nil :bad-date)))
-        (mjr-zotero-db-cache-populate mjr-zotero-db-cache-update-tag)
+        (mjr-zotero-db-cache-populate mjr-zotero-local-api-tag-default)
         (progn
           (message "mjr-zotero-db-cache-update: Updating Zotero DB Cache...")
           (let ((tot (cl-loop for start from 0 by mjr-zotero-db-cache-update-limit
@@ -765,7 +814,7 @@ This function attempts to preform incremental updates:
                                                                                                  (cons "start"   (number-to-string start))
                                                                                                  (cons "limit"   (number-to-string mjr-zotero-db-cache-update-limit))
                                                                                                  (cons "include" (string-join (delete-dups (cons "data" mjr-zotero-db-cache-include)) ","))
-                                                                                                 (cons "tag"     mjr-zotero-db-cache-update-tag)))))
+                                                                                                 (cons "tag"     mjr-zotero-local-api-tag-default)))))
                                               (or tmp
                                                   (progn (mjr-zotero-db-cache-clear)
                                                          (error "mjr-zotero-db-cache-update: Failure in Zotero local API call!"))))
@@ -910,7 +959,7 @@ For examples:
 Each element of MATCH-SPECIFIERS is processed via `mjr-zotero-db-cache-search-unique' to produce an item-key.  The entries will be processed and output in the
 order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify large bibliographies and `mjr-zotero-db-cache-search' to sort them.
 
- - BIB-STYLE: String with a a bibliographic style known to Zotero.  If NIL, then `mjr-zotero-local-api-bib-style' is used.
+ - BIB-STYLE: String with a a bibliographic style known to Zotero.  If NIL, then `mjr-zotero-local-api-bib-style-default' is used.
    This value is *only* used when this function calls `mjr-zotero-local-api-bib' for a fresh bibliographic entry.
  - BETWEEN-STRING is used to separate each formatted bibliographic entry produced.
  - PLAIN-TEXT being non-NIL results in the HTML bib entry being converted to plain ASCII text using `mjr-zotero-html-bib-to-plain-text'
@@ -998,19 +1047,19 @@ occurs otherwise."
 Used interactively:
   - Without a prefix argument
     - MATCH-SPECIFIER is pulled from the buffer using `mjr-zotero-match-specifier-at-point'
-    - BIB-STYLE is NIL which means the value in `mjr-zotero-local-api-bib-style' is used
+    - BIB-STYLE is NIL which means the value in `mjr-zotero-local-api-bib-style-default' is used
     - FRESH-BIB is NIL
     - PLAIN-TEXT is t
   - With a prefix argument
     - MATCH-SPECIFIER is pulled from the buffer using `mjr-zotero-match-specifier-at-point'
-    - BIB-STYLE is queried from the user from options listed in `mjr-zotero-prompt-bib-styles'
+    - BIB-STYLE is queried from the user from options listed in `mjr-zotero-prompt-bib-style-prompt'
     - FRESH-BIB is t
     - PLAIN-TEXT is queried from the user"
   (interactive (list (mjr-zotero-match-specifier-at-point)
                      (when current-prefix-arg
                        (if (and (boundp 'ido-everywhere) ido-everywhere)
-                           (ido-completing-read "Bibliography Style: " mjr-zotero-prompt-bib-styles nil nil mjr-zotero-local-api-bib-style)
-                           (completing-read     "Bibliography Style: " mjr-zotero-prompt-bib-styles nil nil mjr-zotero-local-api-bib-style)))
+                           (ido-completing-read "Bibliography Style: " mjr-zotero-prompt-bib-style-prompt nil nil mjr-zotero-local-api-bib-style-default)
+                           (completing-read     "Bibliography Style: " mjr-zotero-prompt-bib-style-prompt nil nil mjr-zotero-local-api-bib-style-default)))
                      current-prefix-arg
                      (if current-prefix-arg
                          (y-or-n-p "Result as plain text? ")
