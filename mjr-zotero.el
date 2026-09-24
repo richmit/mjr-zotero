@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.16
+;; Version:     1.17
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -155,7 +155,7 @@
 (defun mjr-zotero-html-bib-to-plain-text (b)
   "Convert a string with a Zotero HTML formatted bibliographic entry into plain, ASCII text.  Returns NIL if something goes wrong.
 This function will only convert strings that appear to be Zotero HTML formatted bibliographic entries, and thus should be idempotent under expected use cases.
-Conversion from Unicode to ASCII is limited; however, it gets most of the non-ASCII characters introduced from common Zotero's bibliography styles."
+Conversion from Unicode to ASCII is limited; however, it gets most of the non-ASCII characters introduced from common Zotero bibliography styles."
   (when (stringp b)
     (if (not (string-match-p "\\`[[:space:]\n\r]*<div[[:space:]\n\r]*class" b))
         b
@@ -253,9 +253,12 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defcustom mjr-zotero-data-key-re (list (list "key"  "zotero://select/items/[0-9]_"         "\\(?1:[0-9A-Z]\\{8\\}\\)")
-                                        (list "DOI"  "\\(DOI:\\|doi:\\|https://doi.org/\\)" "\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)")
-                                        (list "ISBN" "\\(isbn\\|ISBN\\):"                   "\\(?1:[0-9]\\(-?[0-9]\\)\\{8\\}\\(\\(-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)"))
+(defcustom mjr-zotero-data-key-re
+  (list (list "key"         "zotero://select/items/[0-9]_"         "\\(?1:[0-9A-Z]\\{8\\}\\)")
+        (list "DOI"         "\\(DOI:\\|doi:\\|https://doi.org/\\)" "\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)")
+        (list "ISBN"        "\\(isbn\\|ISBN\\):"                   "\\(?1:[0-9]\\(-?[0-9]\\)\\{8\\}\\(\\(-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)")
+        (list "citationKey" nil                                     "\\[cite:\\([^@]*?\\)@\\(?1:[^[:space:]\n\r@]+\\)\\([^@]*?\\)\\]")
+        (list "citationKey" nil                                     "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}"))
   "Regular expressions for identify strings as keys.
 Each sub-list contains the key, a regex for optional prefix junk, and a regex for the object.  The regular expressions are case sensitive.  One, and only one,
 of the regular expressions must contain an explicitly numbered group 1.  This named group 1 is used to identify the value to be matched against the key
@@ -264,7 +267,9 @@ allowing for throw-away identifying text around a key value.  For example: (list
 The default value recognizes:
   - Zotero item keys (both by themselves and as a Zotero connector URL)
   - ISBN numbers (with or without an ISBN:/isbn: prefix)
-  - DOIs (with or without a doi: prefix or as part of a doi.org URL)"
+  - DOIs (with or without a doi: prefix or as part of a doi.org URL)
+  - org-mode citations
+  - LaTeX citations"
   :type '(repeat (cons string string))
   :group 'mjr-zotero)
 
@@ -317,7 +322,7 @@ otherwise.  Without an active region the return will be a string (if something t
               s)))
       (let ((case-fold-search nil))
         (cl-loop for (k p v) in mjr-zotero-data-key-re
-                 for m = (and (thing-at-point-looking-at (concat "\\b\\(" p "\\)?\\(" v "\\)\\b") 100) (match-string 1))
+                 for m = (and (thing-at-point-looking-at (concat (when p (concat "\\(?:" p "\\)?")) v) 100) (match-string 1))
                  when m
                  do (cl-return (substring-no-properties m))))))
 
@@ -638,7 +643,7 @@ Uses `mjr-zotero-local-api-bib-style-default' if BIB-STYLE is not provided or is
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
 (defcustom mjr-zotero-local-api-export-format-default "csljson"
-  "A list of export formats used for prompts."
+  "The default export ormat used by Local API calls."
   :type 'string
   :group 'mjr-zotero)
 
