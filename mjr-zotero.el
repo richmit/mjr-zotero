@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.17
+;; Version:     1.18
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -282,6 +282,10 @@ The default value recognizes:
                     (string-match (concat "\\`\\(" p "\\)?\\(" v "\\)\\'") match-specifier))
              do (cl-return (cons k (match-string 1 match-specifier))))))
 
+;; 
+;; (mjr-zotero-data-key-p "[cite@2005qi-aoancs]")
+;; (mjr-zotero-data-key-p "\\cite:2005qi-aoancs}")
+;;
 ;; (mjr-zotero-data-key-p "686PNJGS")
 ;; ("key" . "686PNJGS")
 ;;
