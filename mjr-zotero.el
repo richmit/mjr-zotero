@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.19
+;; Version:     1.21
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -43,7 +43,8 @@
 ;;     - Inside source code comments and strings
 ;;     - As blocks of HTML (which I include in HTML & org-mode documents)
 ;;
-;; The first two items can be achieved interactively -- i.e. mark the criteria in the buffer, and run the function.
+;; The first two items can be achieved interactively -- i.e. Put the point on the criteria and and run the function.  Note
+;; the interactive search methods in this package are also integrated into the mjr-thingy-lookeruper framework.
 ;;
 ;; ** General Package Organization
 ;;
@@ -159,35 +160,38 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun mjr-zotero-html-bib-to-plain-text (b)
+(defun mjr-zotero-html-bib-to-plain-text (b &optional prepend-string)
   "Convert a string with a Zotero HTML formatted bibliographic entry into plain, ASCII text.  Returns NIL if something goes wrong.
 This function will only convert strings that appear to be Zotero HTML formatted bibliographic entries, and thus should be idempotent under expected use cases.
 Conversion from Unicode to ASCII is limited; however, it gets most of the non-ASCII characters introduced from common Zotero bibliography styles."
   (when (stringp b)
     (if (not (string-match-p "\\`[[:space:]\n\r]*<div[[:space:]\n\r]*class" b))
         b
-        (let ((s (with-temp-buffer
-                   (insert b)
-                   (shr-render-region (point-min) (point-max))
-                   (buffer-substring-no-properties (point-min) (point-max)))))
-          (when (and (stringp s) (< 0 (length s)))
-            (setq s (string-trim s))
-            (dolist (p '((#x2013 . "-")
-                         (#x2014 . "-")
-                         (#x2019 . "'")
-                         (#x2018 . "'")
-                         (#x2019 . "'")
-                         (#x00fc . "u")
-                         (#x00f8 . "o")
-                         (#x00e4 . "a")
-                         (#x0161 . "s")
-                         (#x201c . "\"")
-                         (#x201D . "\"")
-                         (#x00f6 . "o")))
-              (setq s (string-replace (string (car p)) (cdr p) s)))
-            (setq s (replace-regexp-in-string "\\\\[`'^~=.\"]{\\([a-zA-Z]\\)}" "\\1" s))  ;; Remove LaTeX accents with bracket protected argument
-            (setq s (replace-regexp-in-string "\\\\[`'^~=.\"]\\([a-zA-Z]\\)"   "\\1" s))  ;; Remove LaTeX accents without bracket protected argument
-            s)))))
+        (let ((shr-width 1000))
+          (let ((s (with-temp-buffer
+                     (insert b)
+                     (shr-render-region (point-min) (point-max))
+                     (buffer-substring-no-properties (point-min) (point-max)))))
+            (when (and (stringp s) (< 0 (length s)))
+              (setq s (string-trim s))
+              (dolist (p '((#x2013 . "-")
+                           (#x2014 . "-")
+                           (#x2019 . "'")
+                           (#x2018 . "'")
+                           (#x2019 . "'")
+                           (#x00fc . "u")
+                           (#x00f8 . "o")
+                           (#x00e4 . "a")
+                           (#x0161 . "s")
+                           (#x201c . "\"")
+                           (#x201D . "\"")
+                           (#x00f6 . "o")))
+                (setq s (string-replace (string (car p)) (cdr p) s)))
+              (setq s (replace-regexp-in-string "\\\\[`'^~=.\"]{\\([a-zA-Z]\\)}" "\\1" s))  ;; Remove LaTeX accents with bracket protected argument
+              (setq s (replace-regexp-in-string "\\\\[`'^~=.\"]\\([a-zA-Z]\\)"   "\\1" s))  ;; Remove LaTeX accents without bracket protected argument
+              (when (stringp prepend-string)
+                (setq s (concat prepend-string s)))
+              s))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-recursive-getum (error-handler expected-type dat-o-dat &rest rest)
@@ -657,7 +661,8 @@ The default includes the following:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-local-api-bib (item-key-or-list-of-item-keys &optional bib-style between-string plain-text)
   "Generate a formatted bibliographic entry for an item via the Zotero Local API.
-Uses `mjr-zotero-local-api-bib-style-default' if BIB-STYLE is not provided or is NIL."
+Uses `mjr-zotero-local-api-bib-style-default' if BIB-STYLE is not provided or is NIL.
+If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is used to convert the entry, and PLAIN-TEXT is passed as the PREPEND-STRING argument."
   (mapconcat (lambda (x) (let* ((e (mjr-zotero-local-api-call 'hash-table
                                                               (concat "/api/users/0/items/" x)
                                                               (cons "include" "bib")
@@ -668,7 +673,7 @@ Uses `mjr-zotero-local-api-bib-style-default' if BIB-STYLE is not provided or is
                            (unless (and b (stringp b) (not (string-empty-p b)))
                              (error "mjr-zotero-local-api-bib: Unable to generate formatted bibliographic entry."))
                            (if plain-text
-                               (or (mjr-zotero-html-bib-to-plain-text b)
+                               (or (mjr-zotero-html-bib-to-plain-text b plain-text)
                                    (error "mjr-zotero-local-api-bib: Plain-Text conversion failed for %s!" b))
                                b)))
              (if (listp item-key-or-list-of-item-keys)
@@ -1005,7 +1010,7 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
  - BIB-STYLE: String with a a bibliographic style known to Zotero.  If NIL, then `mjr-zotero-local-api-bib-style-default' is used.
    This value is *only* used when this function calls `mjr-zotero-local-api-bib' for a fresh bibliographic entry.
  - BETWEEN-STRING is used to separate each formatted bibliographic entry produced.
- - PLAIN-TEXT being non-NIL results in the HTML bib entry being converted to plain ASCII text using `mjr-zotero-html-bib-to-plain-text'
+ - PLAIN-TEXT being non-NIL results in a `mjr-zotero-html-bib-to-plain-text' call with PLAIN-TEXT passed as the PREPEND-STRING argument.
  - If FRESH-BIB is NIL, then bibliographic entries in `mjr-zotero-db-cache' are used and `mjr-zotero-local-api-bib' is only used if
    the value is not found in the cache.  When FRESH-BIB is non-NIL, `mjr-zotero-local-api-bib' is used for every entry."
   (let* ((list-of-item-keys (if (null match-specifiers)
@@ -1023,7 +1028,7 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
                                                          (puthash "bib" ba d)
                                                          (error "mjr-zotero-db-cache-bib: Unable to produce bibliographic entry for %s!" k)))))
                                      collect (if plain-text
-                                                 (or (mjr-zotero-html-bib-to-plain-text b)
+                                                 (or (mjr-zotero-html-bib-to-plain-text b plain-text)
                                                      (error "mjr-zotero-db-cache-bib: Plain-Text conversion failed for %s!" b))
                                                  b))))
     (string-join list-of-bibs (or between-string "\n\n"))))
