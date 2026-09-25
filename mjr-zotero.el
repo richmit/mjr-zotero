@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.18
+;; Version:     1.19
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -371,40 +371,47 @@ Without an active region and a key value is found near the point, then:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-element-match (element match-specifier)
   "Return non-NIL if the ELEMENT matches MATCH-SPECIFIER.
-MATCH-SPECIFIER is a simple match-specifier a lisp expression containing simple match-specifiers.
+MATCH-SPECIFIER is a lisp expression.  
 
-Simple match-specifiers are used to test a match against a single hash value in the data member of ELEMENT.  The single hash value (DATA-VALUE) is specified
-by DATA-KEY in what follows -- it amounts to (gethash DATA-KEY (gethash \"data\" element)).  The method of testing a match is the PREDICATE in what follows.
-Simple predicates come in three forms:
+Simple match-specifiers 
+   Used to test a match against a single hash value in the data member of ELEMENT.  The single hash value (DATA-VALUE) is specified by DATA-KEY in what
+   follows -- it amounts to (gethash DATA-KEY (gethash \"data\" element)).  
 
-  1) ([PREDICATE] DATA-KEY SEARCH-STRING) -- Matching strings
-      - PREDICATE (optional) one of the following keywords:
-        - :regex ............... string-match-p
-        - :ends-with ........... string-suffix-p
-        - :starts-with ......... string-prefix-p
-        - :equal ............... string-equal
-        - :contains ............ string-search
-        - :equal-ignore-case ... string-equal-ignore-case
-        - :greater ............. string-greaterp
-        - :less ................ string-lessp
-        - :missing ............. Returns non-NIL if the data value is NIL
-      - If PREDICATE is not provided, then `mjr-zotero-element-match-default-predicate' is used.
-      - DATA-KEY is a key in the data member (a hash) of ELEMENT.  These keys are strings.
-      - SEARCH-STRING is used to determine a match with the value in ELEMENT
-      - The return value is:
-        - If DATA-VALUE is a string: The value of the predicate run against the SEARCH-STRING and DATA-VALUE string
-        - If DATA-VALUE is an array of hashs: Non-NIL if the predicate run against the SEARCH-STRING and values in the DATA-VALUE hash is non-NIL
-          Values in the DATA-VALUE hash are ignored if they have a key in the `mjr-zotero-element-match-hash-skip-keys' for the given DATA-KEY
-  2) ([PREDICATE] DATA-KEY SUB-KEY-1 SEARCH-STRING-1 ...) -- Only used when  DATA-VALUE is an array of hashes
-    - PREDICATE & DATA-KEY are as in 1).
-    - The SUB-KEY-N element of each hash contained in the value for DATA-KEY are tested against SEARCH-STRING-N.
-    - The return is non-NIL if ALL sub-* tests are non-NIL for at least one hash in the array
-  3) SEARCH-STRING
-     - The DATA-KEY is found by using the first matching regular expressions in `mjr-zotero-data-key-re'
+    S1) ([PREDICATE] DATA-KEY MATCH-STRING)
+        - This list form is the canonical form for a simple match-specifier.
+        - PREDICATE: When missing the value of `mjr-zotero-element-match-default-predicate' is used. Otherwise it must be one of the following keywords:
+           - :regex ............... string-match-p
+           - :ends-with ........... string-suffix-p
+           - :starts-with ......... string-prefix-p
+           - :equal ............... string-equal
+           - :contains ............ string-search
+           - :equal-ignore-case ... string-equal-ignore-case
+           - :greater ............. string-greaterp
+           - :less ................ string-lessp
+           - :missing ............. Returns non-NIL if the data value is NIL          
+        - DATA-KEY is a key in the data member (a hash) of ELEMENT.  These keys are strings.
+        - MATCH-STRING is used to determine a match with the value in ELEMENT
+        - The return value is:
+          - If DATA-VALUE is a string: The value of the predicate run against the MATCH-STRING and DATA-VALUE string
+          - If DATA-VALUE is an array of hashs: Non-NIL if the predicate run against the MATCH-STRING and values in the DATA-VALUE hash is non-NIL
+            Values in the DATA-VALUE hash are ignored if they have a key in the `mjr-zotero-element-match-hash-skip-keys' for the given DATA-KEY          
+    S2) ([PREDICATE] DATA-KEY SUB-KEY-1 MATCH-STRING-1 ...) -- Only used when  DATA-VALUE is an array of hashes
+        - PREDICATE & DATA-KEY are as in 1).
+        - The SUB-KEY-N element of each hash contained in the value for DATA-KEY are tested against MATCH-STRING-N.
+        - The return is non-NIL if ALL sub-* tests are non-NIL for at least one hash in the array
+    S3) KEY-VALUE-STRING
+        A string from which a MATCH-STRING may be extracted and a DATA-KEY may be inferred.  ex: ISBN:978-0-321-63773-4
+        Converted to S1 by `mjr-zotero-string-to-match-specifier' via `mjr-zotero-data-key-re'.
+    S4) String containing an type S1 or S2 expression.
+        These are most commonly produced from UI operations.  i.e. Requesting a MATCH-SPECIFIER via `read-string', or pulling text from a buffer.
+        Converted to S1 by `read-from-string'
 
-Match-specifiers are expressions containing simple match-specifiers.  For example we can combine two simple match-specifiers
-with an AND like this:
-    \='(and (:equal \"itemType\" \"book\") (:missing \"ISBN\"))"
+Boolean Expression match-specifiers
+   Boolean lisp expressions involving simple match-specifiers.  These can be provided as a lisp list or as lisp code inside a string.
+   For example we can combine two simple match-specifiers with an AND like this:
+     \='(and (:equal \"itemType\" \"book\") (:missing \"ISBN\"))
+   These expressions are evaluated recursively rendering all simple match-specifiers into a boolean value, and then evaluating the
+   resulting lisp expression to return a single boolean result."
   (cl-flet ((string-it (v)
               (if (stringp v)
                   v
