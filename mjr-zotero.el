@@ -86,7 +86,7 @@
 ;;  - `mjr-zotero-element-match'              Match a Zotero entry against criteria (for searches)
 ;;  - `mjr-zotero-looks-like-item-key'        Return non-NIL if the given object looks like a Zotero item-id
 ;;  - `mjr-zotero-html-bib-to-plain-text'     Convert HTML bibliographic entries to plain text
-;;  - `mjr-zotero-data-key-p'                 Convert a string match-specifier into a list match-specifier
+;;  - `mjr-zotero-string-to-match-specifier'  Convert a string match-specifier into a list match-specifier
 ;;  - `mjr-zotero-match-specifier-at-point'   Pull a match-specifier from buffer near point
 ;;
 ;; ** Performance
@@ -254,15 +254,15 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defcustom mjr-zotero-data-key-re
-  (list (list "key"         "zotero://select/items/[0-9]_"         "\\(?1:[0-9A-Z]\\{8\\}\\)")
-        (list "DOI"         "\\(DOI:\\|doi:\\|https://doi.org/\\)" "\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)")
-        (list "ISBN"        "\\(isbn\\|ISBN\\):"                   "\\(?1:[0-9]\\(-?[0-9]\\)\\{8\\}\\(\\(-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)")
-        (list "citationKey" nil                                     "\\[cite:\\([^@]*?\\)@\\(?1:[^[:space:]\n\r@]+\\)\\([^@]*?\\)\\]")
-        (list "citationKey" nil                                     "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}"))
+  (list (list "key"         "\\(?:zotero://select/items/[0-9]_\\)?\\(?1:[0-9A-Z]\\{8\\}\\)")
+        (list "DOI"         "\\(?:DOI:\\|doi:\\|https://doi.org/\\)?\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)")
+        (list "ISBN"        "\\(?:[iI][sS][bB][nN]:?\\)?\\(?1:[0-9]\\(?:-?[0-9]\\)\\{8\\}\\(?:\\(?:-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)")
+        (list "citationKey" "\\[cite:\\(?:[^@]*?\\)@\\(?1:[^[:space:]\n\r@]+\\)\\(?:[^@]*?\\)\\]")
+        (list "citationKey" "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}"))
   "Regular expressions for identify strings as keys.
-Each sub-list contains the key, a regex for optional prefix junk, and a regex for the object.  The regular expressions are case sensitive.  One, and only one,
-of the regular expressions must contain an explicitly numbered group 1.  This named group 1 is used to identify the value to be matched against the key
-allowing for throw-away identifying text around a key value.  For example: (list \"citationKey\" \"\" \"cite:\\(?1:[^[:space:]\\n\\r]+\\)\")
+
+Each sub-list contains the key and a regex for the object.  The regular expressions are case sensitive.  Each regular expression must contain one, and only
+one, explicitly numbered group 1.  Group number 1 is used to identify the value to be matched against the key.
 
 The default value recognizes:
   - Zotero item keys (both by themselves and as a Zotero connector URL)
@@ -274,65 +274,80 @@ The default value recognizes:
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun mjr-zotero-data-key-p (match-specifier)
-  "If MATCH-SPECIFIER is a string and appears to specify a known data-key, then return a cons cell with the key and value.  Otherwise return NIL."
-  (when (stringp match-specifier)
-    (cl-loop for (k p v) in mjr-zotero-data-key-re
-             when (let ((case-fold-search nil))
-                    (string-match (concat "\\`\\(" p "\\)?\\(" v "\\)\\'") match-specifier))
-             do (cl-return (cons k (match-string 1 match-specifier))))))
+(defun mjr-zotero-string-to-match-specifier (str &optional return-item-key-as-string)
+  "If STR is a string and appears to specify a known data-key, then return a cons cell with the key and value.  Otherwise return NIL."
+  (when (stringp str)
+    (if (string-match-p "\\`(.*)\\'" str)
+        (read-from-string string)
+        (let ((case-fold-search nil))
+          (cl-loop for (k re) in mjr-zotero-data-key-re
+                   for m = (and (string-match (concat  "\\`" re "\\'") str) (match-string 1 str))
+                   when m
+                   do (cl-return (if (and return-item-key-as-string (string-equal k "key"))
+                                     m
+                                     (list mjr-zotero-element-match-default-predicate k m))))))))
 
+;; (mjr-zotero-string-to-match-specifier "[cite:@2005qi-aoancs]")
+;; (:equal "citationKey" "2005qi-aoancs")
 ;; 
-;; (mjr-zotero-data-key-p "[cite@2005qi-aoancs]")
-;; (mjr-zotero-data-key-p "\\cite:2005qi-aoancs}")
-;;
-;; (mjr-zotero-data-key-p "686PNJGS")
-;; ("key" . "686PNJGS")
-;;
-;; (mjr-zotero-data-key-p "zotero://select/items/0_7JU94X7V")
-;; ("key" . "7JU94X7V")
-;;
-;; (mjr-zotero-data-key-p "10.1016/0893-9659(89)90079-7")
-;; ("DOI" . "10.1016/0893-9659(89)90079-7")
-;;
-;; (mjr-zotero-data-key-p "doi:10.1016/0893-9659(89)90079-7")
-;; ("DOI" . "10.1016/0893-9659(89)90079-7")
-;;
-;; (mjr-zotero-data-key-p "https://doi.org/10.1016/0893-9659(89)90079-7")
-;; ("DOI" . "10.1016/0893-9659(89)90079-7")
-;;
-;; (mjr-zotero-data-key-p "ISBN:978-0-321-63773-4")
-;; ("ISBN" . "978-0-321-63773-4")
-;;
-;; (mjr-zotero-data-key-p "isbn:978-0-321-63773-4")
-;; ("ISBN" . "978-0-321-63773-4")
-;;
-;; (mjr-zotero-data-key-p "978-0-321-63773-4")
-;; ("ISBN" . "978-0-321-63773-4")
-;;
-;; (mjr-zotero-data-key-p "dog")
+;; (mjr-zotero-string-to-match-specifier "[cite:See: @2005qi-aoancs]")
+;; (:equal "citationKey" "2005qi-aoancs")
+;; 
+;; (mjr-zotero-string-to-match-specifier "[cite:See: @2005qi-aoancs p. 10]")
+;; (:equal "citationKey" "2005qi-aoancs")
+;; 
+;; (mjr-zotero-string-to-match-specifier "\\cite{2005qi-aoancs}")
+;; (:equal "citationKey" "2005qi-aoancs")
+;; 
+;; (mjr-zotero-string-to-match-specifier "686PNJGS")
+;; "686PNJGS"
+;; 
+;; (mjr-zotero-string-to-match-specifier "zotero://select/items/0_7JU94X7V")
+;; "7JU94X7V"
+;; 
+;; (mjr-zotero-string-to-match-specifier "10.1016/0893-9659(89)90079-7")
+;; (:equal "DOI" "10.1016/0893-9659(89)90079-7")
+;; 
+;; (mjr-zotero-string-to-match-specifier "doi:10.1016/0893-9659(89)90079-7")
+;; (:equal "DOI" "10.1016/0893-9659(89)90079-7")
+;; 
+;; (mjr-zotero-string-to-match-specifier "https://doi.org/10.1016/0893-9659(89)90079-7")
+;; (:equal "DOI" "10.1016/0893-9659(89)90079-7")
+;; 
+;; (mjr-zotero-string-to-match-specifier "ISBN:978-0-321-63773-4")
+;; (:equal "ISBN" "978-0-321-63773-4")
+;; 
+;; (mjr-zotero-string-to-match-specifier "isbn:978-0-321-63773-4")
+;; (:equal "ISBN" "978-0-321-63773-4")
+;; 
+;; (mjr-zotero-string-to-match-specifier "978-0-321-63773-4")
+;; (:equal "ISBN" "978-0-321-63773-4")
+;; 
+;; (mjr-zotero-string-to-match-specifier "dog")
 ;; nil
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun mjr-zotero-match-specifier-at-point ()
-  "Return the match-specifier in the marked region or a string that looks like a key value near the point.  Return NIL if nothing is found.
-When called with an active region, the return is a lisp expression if the active region's contents look like a complete lisp expression and a string
-otherwise.  Without an active region the return will be a string (if something that looks like a key value is found), or NIL otherwise."
+(defun mjr-zotero-match-specifier-at-point (&optional return-item-key-as-string)
+  "Return the match-specifier in the marked region or near the point.  Return NIL if nothing useful is found.
+If the region is active, then the  return is the value of `mjr-zotero-string-to-match-specifier' to applied to the region's contents.
+Without an active region and a key value is found near the point, then:
+ - If the key value is an item-key, then it is returned as if when RETURN-ITEM-KEY-AS-STRING is non-NIL 
+ - Otherwise a list-form match-specifier is returned."
   (if (and transient-mark-mode (region-active-p) (mark))
-      (let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
-        (when s
-          (if (string-match-p "\\`'?(.*)\\'" s)
-              (car (read-from-string (concat "'" (string-remove-prefix "'" s))))
-              s)))
+      (when-let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
+        (mjr-zotero-string-to-match-specifier s))
       (let ((case-fold-search nil))
-        (cl-loop for (k p v) in mjr-zotero-data-key-re
-                 for m = (and (thing-at-point-looking-at (concat (when p (concat "\\(?:" p "\\)?")) v) 100) (match-string 1))
+        (cl-loop for (k re) in mjr-zotero-data-key-re
+                 for m = (and (thing-at-point-looking-at re 100) (match-string 1))
                  when m
-                 do (cl-return (substring-no-properties m))))))
+                   do (cl-return (if (and return-item-key-as-string (string-equal k "key"))
+                                   (substring-no-properties m)
+                                   (list mjr-zotero-element-match-default-predicate k (substring-no-properties m))))))))
 
 ;; ;; Some targets for at-point tests
 ;; ;; For an interactive demo, try mjr-zotero-db-cache-open-item or mjr-zotero-db-cache-open-attachment with these
 ;;
+
 ;; 686PNJGS
 ;; zotero://select/items/0_7JU94X7V
 ;; 10.1016/0893-9659(89)90079-7
@@ -341,6 +356,10 @@ otherwise.  Without an active region the return will be a string (if something t
 ;; ISBN:978-0-321-63773-4
 ;; isbn:978-0-321-63773-4
 ;; 978-0-321-63773-4
+;; [cite:@2005qi-aoancs]
+;; [cite:See: @2005qi-aoancs]
+;; [cite:See: @2005qi-aoancs p. 10]
+;; \cite:2005qi-aoancs}
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-element-match (element match-specifier)
@@ -384,9 +403,10 @@ with an AND like this:
                   v
                   (format "%s" v))))
     ;; Transform nekked string into a match-specifier list
-    (if-let ((tmp (mjr-zotero-data-key-p match-specifier)))
-        (setq match-specifier (list mjr-zotero-element-match-default-predicate (car tmp) (cdr tmp)))
-      (error "mjr-zotero-element-match: Unable to determine data key from search string: %s" match-specifier))
+    (when (stringp match-specifier)
+      (if-let ((tmp (mjr-zotero-string-to-match-specifier match-specifier)))
+          (setq match-specifier tmp)
+        (error "mjr-zotero-element-match: Unable to convert string to match-specifier: %s" match-specifier)))
     ;; Test for match
     (when (and (listp match-specifier) (not (null match-specifier)))
       (if (stringp (car match-specifier))
