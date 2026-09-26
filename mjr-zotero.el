@@ -123,6 +123,28 @@
 ;;
 ;; This will wrap the results in a "#+begin_export html" block.
 ;;
+;; ** Bibliographies in source code Doxygen comments
+;;
+;; I like to include mini-bibliographies in function/subroutine comments.  We can embedd the code to generate the bibliography right in the comment.  I use
+;; https://github.com/richmit/mjr-eval/ to evaluate these code blocks.  If we are using Doxygen we can prevent the bibliography generation code from appearing
+;; in the rendered documentation by surrounding it in HTML comment characters.  Here is an example:
+;;
+;;         !! @par References:
+;;         !! <!-- :elisp>>> (mjr-zotero-db-cache-bib '("10.1016/0771-050x(80)90013-3" 
+;;         !!                                           "10.1007/978-3-540-78862-1" 
+;;         !!                                           "10.1002/9781119121534") 
+;;         !!                                         "apa" "\n" t '("!!  - "))
+;;         !! -->
+;;         !!  - Dormand, J. R., & Prince, P. J. (1980). A family of embedded Runge-Kutta formulae. Journal of Computational and Applied
+;;         !!    Mathematics, 6(1), 19-26. https://doi.org/10.1016/0771-050x(80)90013-3
+;;         !!  - Hairer, E., Norsett, S. P., & Wanner, G. (2008). Solving Ordinary Differential Equations I: Nonstiff Problems (2nd
+;;         !!    ed.). Springer. https://doi.org/10.1007/978-3-540-78862-1
+;;         !!  - Butcher, J. C. (2016). Numerical methods for ordinary differential equations (3rd
+;;         !!    edition). Wiley. https://doi.org/10.1002/9781119121534
+;; 
+;; This example is from https://github.com/richmit/MRKISS/blob/main/lib/mrkiss_eerk_dormand_prince_5_4.f90
+;; A rendered version of the comment is here: https://www.mitchr.me/SS/MRKISS/doc-lib/html/namespacemrkiss__eerk__dormand__prince__5__4.html
+;;
 ;; ** Generating A Bibliography
 ;;
 ;; Two functions directly generate a bibliography.  `mjr-zotero-local-api-bib' takes one or more Zotero item-key values and uses the local API to

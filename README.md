@@ -15,7 +15,8 @@ My primary use cases are to do the following based on ISBNs, DOIs, Zotero item-i
     - Inside source code comments and strings
     - As blocks of HTML (which I include in HTML & org-mode documents)
 
-The first two items can be achieved interactively -- i.e. mark the criteria in the buffer, and run the function.
+The first two items can be achieved interactively -- i.e. Put the point on the criteria and and run the function.  Note
+the interactive search methods in this package are also integrated into the mjr-thingy-lookeruper framework.
 
 ## General Package Organization
 
@@ -32,7 +33,7 @@ sophisticated searching and data manipulation wholly within Emacs. These are the
  - `mjr-zotero-db-cache-populate`        Empty the Emacs Zotero DB cache, and then fill it with fresh data from Zotero
  - `mjr-zotero-db-cache-update`          Used for automatic `mjr-zotero-db-cache` updates
  - `mjr-zotero-db-cache-open-attachment` Search for an entry in `mjr-zotero-db-cache`, and open it's attachment
- - `mjr-zotero-db-cache-open-item`       Search for an entry in `mjr-zotero-db-cache`, and open it in Zotero
+ - `mjr-zotero-db-cache-select-item`     Search for an entry in `mjr-zotero-db-cache`, and select it in Zotero
 
 The next level of functionality works directly with the Zotero Local API.  The intent is to provide a low friction interface to the Zotero Local API for
 programmatic use.  These functions form the ground work for the higher level functions mentioned above.  I expect these functions are rarely called directly
@@ -49,7 +50,8 @@ by end users.
 The next level of functionality works with the Zotero connector.
 
  - `mjr-zotero-connector-link-to-item-key` Extract an item-key from a connector link
- - `mjr-zotero-connector-open-item`        Open an item in Zotero
+ - `mjr-zotero-connector-select-item`      Open an item in Zotero
+ - `mjr-zotero-connector-open-pdf`         Open a PDF stored in Zotero
 
 The lowest level of functionality provides what might be called Zotero adjacent operations.  For example working with data structures used by by all of
 the functions above.
@@ -58,7 +60,7 @@ the functions above.
  - `mjr-zotero-element-match`              Match a Zotero entry against criteria (for searches)
  - `mjr-zotero-looks-like-item-key`        Return non-NIL if the given object looks like a Zotero item-id
  - `mjr-zotero-html-bib-to-plain-text`     Convert HTML bibliographic entries to plain text
- - `mjr-zotero-data-key-p`                 Convert a string match-specifier into a list match-specifier
+ - `mjr-zotero-string-to-match-specifier`  Convert a string match-specifier into a list match-specifier
  - `mjr-zotero-match-specifier-at-point`   Pull a match-specifier from buffer near point
 
 ## Performance
@@ -92,6 +94,28 @@ is generated from an org-mode file (https://www.mitchr.me/SS/reading/index.org) 
         #+end_src
 
 This will wrap the results in a "#+begin_export html" block.
+
+## Bibliographies in source code Doxygen comments
+
+I like to include mini-bibliographies in function/subroutine comments.  We can embedd the code to generate the bibliography right in the comment.  I use
+https://github.com/richmit/mjr-eval/ to evaluate these code blocks.  If we are using Doxygen we can prevent the bibliography generation code from appearing
+in the rendered documentation by surrounding it in HTML comment characters.  Here is an example:
+
+        !! @par References:
+        !! <!-- :elisp>>> (mjr-zotero-db-cache-bib '("10.1016/0771-050x(80)90013-3" 
+        !!                                           "10.1007/978-3-540-78862-1" 
+        !!                                           "10.1002/9781119121534") 
+        !!                                         "apa" "\n" t '("!!  - "))
+        !! -->
+        !!  - Dormand, J. R., & Prince, P. J. (1980). A family of embedded Runge-Kutta formulae. Journal of Computational and Applied
+        !!    Mathematics, 6(1), 19-26. https://doi.org/10.1016/0771-050x(80)90013-3
+        !!  - Hairer, E., Norsett, S. P., & Wanner, G. (2008). Solving Ordinary Differential Equations I: Nonstiff Problems (2nd
+        !!    ed.). Springer. https://doi.org/10.1007/978-3-540-78862-1
+        !!  - Butcher, J. C. (2016). Numerical methods for ordinary differential equations (3rd
+        !!    edition). Wiley. https://doi.org/10.1002/9781119121534
+
+This example is from https://github.com/richmit/MRKISS/blob/main/lib/mrkiss_eerk_dormand_prince_5_4.f90
+A rendered version of the comment is here: https://www.mitchr.me/SS/MRKISS/doc-lib/html/namespacemrkiss__eerk__dormand__prince__5__4.html
 
 ## Generating A Bibliography
 
