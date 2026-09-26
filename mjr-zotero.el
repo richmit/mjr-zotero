@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.23
+;; Version:     1.24
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -266,15 +266,20 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defcustom mjr-zotero-data-key-re
-  (list (list "key"         "\\(?:zotero://select/items/[0-9]_\\)?\\(?1:[0-9A-Z]\\{8\\}\\)")
-        (list "DOI"         "\\(?:DOI:\\|doi:\\|https://doi.org/\\)?\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)")
-        (list "ISBN"        "\\(?:[iI][sS][bB][nN]:?\\)?\\(?1:[0-9]\\(?:-?[0-9]\\)\\{8\\}\\(?:\\(?:-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)")
-        (list "citationKey" "\\[cite:\\(?:[^@]*?\\)@\\(?1:[^[:space:]\n\r@]+\\)\\(?:[^@]*?\\)\\]")
-        (list "citationKey" "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}"))
+  (list (list "key"         "\\(?:zotero://select/items/[0-9]_\\)?\\(?1:[0-9A-Z]\\{8\\}\\)" nil)
+        (list "key"         "\\(?:zotero://select/library/items/\\)?\\(?1:[0-9A-Z]\\{8\\}\\)" nil)
+        (list "DOI"         "\\(?:DOI:\\|doi:\\|https://doi.org/\\)?\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)" nil)
+        (list "ISBN"        "\\(?:[iI][sS][bB][nN]:?\\)?\\(?1:[0-9]\\(?:-?[0-9]\\)\\{8\\}\\(?:\\(?:-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)" nil)
+        (list "citationKey" "\\[cite:\\(?:[^@]*?\\)@\\(?1:[^[:space:]\n\r@]+\\)\\(?:[^@]*?\\)\\]" '(:delimited))
+        (list "citationKey" "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}" '(:delimited)))
+;; TODO MJR <2026-09-26> mjr-zotero-data-key-re: Embbed key option. key=NIL. key from Group 2. (list nil "\\[<<\\(?2:[a-zA-Z0-9]+\\):\\(?2:[^>\n\r]+\\)>>\\]" '(:delimited))
   "Regular expressions for identify strings as keys.
 
-Each sub-list contains the key and a regex for the object.  The regular expressions are case sensitive.  Each regular expression must contain one, and only
-one, explicitly numbered group 1.  Group number 1 is used to identify the value to be matched against the key.
+Each sub-list contains:
+  - The hash key string
+  - A regex to identify the key value.  They are case sensitive and must have an explicit group named 1 which matches the key value.
+  - Options list containing zero or more keywords:
+    :delimited ... This regex contains natural delimiters and there no need to insure it surrounded by word boundaries
 
 The default value recognizes:
   - Zotero item keys (both by themselves and as a Zotero connector URL)
@@ -312,9 +317,15 @@ The default value recognizes:
 ;; (:equal "citationKey" "2005qi-aoancs")
 ;; 
 ;; (mjr-zotero-string-to-match-specifier "686PNJGS")
+;; (:equal "key" "686PNJGS")
+;; 
+;; (mjr-zotero-string-to-match-specifier "686PNJGS" t)
 ;; "686PNJGS"
 ;; 
 ;; (mjr-zotero-string-to-match-specifier "zotero://select/items/0_7JU94X7V")
+;; (:equal "key" "7JU94X7V")
+;; 
+;; (mjr-zotero-string-to-match-specifier "zotero://select/items/0_7JU94X7V" t)
 ;; "7JU94X7V"
 ;; 
 ;; (mjr-zotero-string-to-match-specifier "10.1016/0893-9659(89)90079-7")
@@ -349,8 +360,15 @@ Without an active region and a key value is found near the point, then:
       (when-let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
         (mjr-zotero-string-to-match-specifier s))
       (let ((case-fold-search nil))
-        (cl-loop for (k re) in mjr-zotero-data-key-re
-                 for m = (and (thing-at-point-looking-at re 100) (match-string 1))
+        (cl-loop for v in mjr-zotero-data-key-re
+                 for k = (car v)
+                 for r = (cadr v)
+                 for o = (cddr v)
+                 for m = (and (thing-at-point-looking-at (if (member :delimited o)
+                                                             r
+                                                             (concat "\\b" r "\\b"))
+                                                         100)
+                              (match-string 1))
                  when m
                    do (cl-return (if (and return-item-key-as-string (string-equal k "key"))
                                    (substring-no-properties m)
@@ -359,9 +377,9 @@ Without an active region and a key value is found near the point, then:
 ;; ;; Some targets for at-point tests
 ;; ;; For an interactive demo, try mjr-zotero-db-cache-select-item or mjr-zotero-db-cache-open-attachment with these
 ;;
-
 ;; 686PNJGS
 ;; zotero://select/items/0_7JU94X7V
+;; zotero://select/library/items/7JU94X7V
 ;; 10.1016/0893-9659(89)90079-7
 ;; doi:10.1016/0893-9659(89)90079-7
 ;; https://doi.org/10.1016/0893-9659(89)90079-7
@@ -733,6 +751,7 @@ When run interactively, all the user is prompted for all argument values.  See `
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-connector-link-to-item-key (url)
   "Transform a Zotero link for the Zotero connector into a Zotero item ID."
+;; TODO MJR <2026-09-26> mjr-zotero-connector-link-to-item-key: Use mjr-zotero-string-to-match-specifier...
   (let ((id (string-remove-prefix "zotero://select/items/0_" url)))
     (if (string-equal url id)
         (error "mjr-zotero-connector-link-to-item-key: Invalid connector item link!")
