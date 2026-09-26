@@ -39,7 +39,7 @@
 ;;
 ;;   - Open Zotero and select an item
 ;;   - Open Zotero PDF attachments without using the Zotero connector
-;;   - Create bibliographies 
+;;   - Create bibliographies
 ;;     - Inside source code comments and strings
 ;;     - As blocks of HTML (which I include in HTML & org-mode documents)
 ;;
@@ -130,18 +130,19 @@
 ;; in the rendered documentation by surrounding it in HTML comment characters.  Here is an example:
 ;;
 ;;         !! @par References:
-;;         !! <!-- :elisp>>> (mjr-zotero-db-cache-bib '("10.1016/0771-050x(80)90013-3" 
-;;         !!                                           "10.1007/978-3-540-78862-1" 
-;;         !!                                           "10.1002/9781119121534") 
+;;         !! <!-- :elisp>>> (mjr-zotero-db-cache-bib '("10.1016/0771-050x(80)90013-3"
+;;         !!                                           "10.1007/978-3-540-78862-1"
+;;         !!                                           "10.1002/9781119121534")
 ;;         !!                                         "apa" "\n" t '("!!  - "))
 ;;         !! -->
-;;         !!  - Dormand, J. R., & Prince, P. J. (1980). A family of embedded Runge-Kutta formulae. Journal of 
-;;         !!    Computational and Applied Mathematics, 6(1), 19-26. https://doi.org/10.1016/0771-050x(80)90013-3
-;;         !!  - Hairer, E., Norsett, S. P., & Wanner, G. (2008). Solving Ordinary Differential Equations I: 
+;;         !!  - Dormand, J. R., & Prince, P. J. (1980). A family of embedded Runge-Kutta formulae. Journal
+;;         !!    of  Computational and Applied Mathematics, 6(1), 19-26.
+;;         !!    https://doi.org/10.1016/0771-050x(80)90013-3
+;;         !!  - Hairer, E., Norsett, S. P., & Wanner, G. (2008). Solving Ordinary Differential Equations I:
 ;;         !!    Nonstiff Problems (2nd ed.). Springer. https://doi.org/10.1007/978-3-540-78862-1
 ;;         !!  - Butcher, J. C. (2016). Numerical methods for ordinary differential equations (3rd
 ;;         !!    edition). Wiley. https://doi.org/10.1002/9781119121534
-;; 
+;;
 ;; This example is from https://github.com/richmit/MRKISS/blob/main/lib/mrkiss_eerk_dormand_prince_5_4.f90
 ;; A rendered version of the comment is here: https://www.mitchr.me/SS/MRKISS/doc-lib/html/namespacemrkiss__eerk__dormand__prince__5__4.html
 ;;
@@ -328,46 +329,46 @@ The default value recognizes:
 
 ;; (mjr-zotero-string-to-match-specifier "[cite:@2005qi-aoancs]")
 ;; (:equal "citationKey" "2005qi-aoancs")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "[cite:See: @2005qi-aoancs]")
 ;; (:equal "citationKey" "2005qi-aoancs")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "[cite:See: @2005qi-aoancs p. 10]")
 ;; (:equal "citationKey" "2005qi-aoancs")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "\\cite{2005qi-aoancs}")
 ;; (:equal "citationKey" "2005qi-aoancs")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "686PNJGS")
 ;; (:equal "key" "686PNJGS")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "686PNJGS" t)
 ;; "686PNJGS"
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "zotero://select/items/0_7JU94X7V")
 ;; (:equal "key" "7JU94X7V")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "zotero://select/items/0_7JU94X7V" t)
 ;; "7JU94X7V"
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "10.1016/0893-9659(89)90079-7")
 ;; (:equal "DOI" "10.1016/0893-9659(89)90079-7")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "doi:10.1016/0893-9659(89)90079-7")
 ;; (:equal "DOI" "10.1016/0893-9659(89)90079-7")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "https://doi.org/10.1016/0893-9659(89)90079-7")
 ;; (:equal "DOI" "10.1016/0893-9659(89)90079-7")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "ISBN:978-0-321-63773-4")
 ;; (:equal "ISBN" "978-0-321-63773-4")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "isbn:978-0-321-63773-4")
 ;; (:equal "ISBN" "978-0-321-63773-4")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "978-0-321-63773-4")
 ;; (:equal "ISBN" "978-0-321-63773-4")
-;; 
+;;
 ;; (mjr-zotero-string-to-match-specifier "dog")
 ;; nil
 
@@ -376,7 +377,7 @@ The default value recognizes:
   "Return the match-specifier in the marked region or near the point.  Return NIL if nothing useful is found.
 If the region is active, then the  return is the value of `mjr-zotero-string-to-match-specifier' to applied to the region's contents.
 Without an active region and a key value is found near the point, then:
- - If the key value is an item-key, then it is returned as if when RETURN-ITEM-KEY-AS-STRING is non-NIL 
+ - If the key value is an item-key, then it is returned as if when RETURN-ITEM-KEY-AS-STRING is non-NIL
  - Otherwise a list-form match-specifier is returned."
   (if (and transient-mark-mode (region-active-p) (mark))
       (when-let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
@@ -416,11 +417,11 @@ Without an active region and a key value is found near the point, then:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-element-match (element match-specifier)
   "Return non-NIL if the ELEMENT matches MATCH-SPECIFIER.
-MATCH-SPECIFIER is a lisp expression.  
+MATCH-SPECIFIER is a lisp expression.
 
-Simple match-specifiers 
+Simple match-specifiers
    Used to test a match against a single hash value in the data member of ELEMENT.  The single hash value (DATA-VALUE) is specified by DATA-KEY in what
-   follows -- it amounts to (gethash DATA-KEY (gethash \"data\" element)).  
+   follows -- it amounts to (gethash DATA-KEY (gethash \"data\" element)).
 
     S1) ([PREDICATE] DATA-KEY MATCH-STRING)
         - This list form is the canonical form for a simple match-specifier.
@@ -433,13 +434,13 @@ Simple match-specifiers
            - :equal-ignore-case ... string-equal-ignore-case
            - :greater ............. string-greaterp
            - :less ................ string-lessp
-           - :missing ............. Returns non-NIL if the data value is NIL          
+           - :missing ............. Returns non-NIL if the data value is NIL
         - DATA-KEY is a key in the data member (a hash) of ELEMENT.  These keys are strings.
         - MATCH-STRING is used to determine a match with the value in ELEMENT
         - The return value is:
           - If DATA-VALUE is a string: The value of the predicate run against the MATCH-STRING and DATA-VALUE string
           - If DATA-VALUE is an array of hashs: Non-NIL if the predicate run against the MATCH-STRING and values in the DATA-VALUE hash is non-NIL
-            Values in the DATA-VALUE hash are ignored if they have a key in the `mjr-zotero-element-match-hash-skip-keys' for the given DATA-KEY          
+            Values in the DATA-VALUE hash are ignored if they have a key in the `mjr-zotero-element-match-hash-skip-keys' for the given DATA-KEY
     S2) ([PREDICATE] DATA-KEY SUB-KEY-1 MATCH-STRING-1 ...) -- Only used when  DATA-VALUE is an array of hashes
         - PREDICATE & DATA-KEY are as in 1).
         - The SUB-KEY-N element of each hash contained in the value for DATA-KEY are tested against MATCH-STRING-N.
@@ -745,11 +746,11 @@ If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is used to con
 (defun mjr-zotero-local-api-export (filename &optional tag format)
   "Export a bibliography file.
 Arguments:
- - TAG ..... If missing or NIL, then `mjr-zotero-local-api-tag-default' is used.   
+ - TAG ..... If missing or NIL, then `mjr-zotero-local-api-tag-default' is used.
  - FORMAT .. If missing or NIL, then `mjr-zotero-local-api-export-format-default' is used.
 When run interactively, all the user is prompted for all argument values.  See `mjr-zotero-local-api-export-format-prompt'."
   (interactive (list (if (and (boundp 'ido-everywhere) ido-everywhere)
-                         (read-file-name     "Output File: ") 
+                         (read-file-name     "Output File: ")
                          (ido-read-file-name "Output File: "))
                      (read-string "Tag: " mjr-zotero-local-api-tag-default)
                      (if (and (boundp 'ido-everywhere) ido-everywhere)
@@ -1007,16 +1008,16 @@ This function returns a list with a single entry for each argument."
 ;;
 ;; (mjr-zotero-db-cache-search-unique "isbn:978-981-283-924-4")
 ;; ("X9FA49XE")
-;; 
+;;
 ;; (mjr-zotero-db-cache-search-unique "ISBN:978-981-283-924-4")
 ;; ("X9FA49XE")
-;; 
+;;
 ;; (mjr-zotero-db-cache-search-unique "0-7167-1480-9")
 ;; ("5KZ82Z3K")
 ;;
 ;; (mjr-zotero-db-cache-search-unique "\\cite{2005qi-aoancs}")
 ;; ("MIXEQ7HJ")
-;; 
+;;
 ;; (mjr-zotero-db-cache-search-unique "[cite:@2005qi-aoancs]")
 ;; ("MIXEQ7HJ")
 

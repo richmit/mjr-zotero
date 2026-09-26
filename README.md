@@ -11,7 +11,7 @@ My primary use cases are to do the following based on ISBNs, DOIs, Zotero item-i
 
   - Open Zotero and select an item
   - Open Zotero PDF attachments without using the Zotero connector
-  - Create bibliographies 
+  - Create bibliographies
     - Inside source code comments and strings
     - As blocks of HTML (which I include in HTML & org-mode documents)
 
@@ -102,14 +102,15 @@ https://github.com/richmit/mjr-eval/ to evaluate these code blocks.  If we are u
 in the rendered documentation by surrounding it in HTML comment characters.  Here is an example:
 
         !! @par References:
-        !! <!-- :elisp>>> (mjr-zotero-db-cache-bib '("10.1016/0771-050x(80)90013-3" 
-        !!                                           "10.1007/978-3-540-78862-1" 
-        !!                                           "10.1002/9781119121534") 
+        !! <!-- :elisp>>> (mjr-zotero-db-cache-bib '("10.1016/0771-050x(80)90013-3"
+        !!                                           "10.1007/978-3-540-78862-1"
+        !!                                           "10.1002/9781119121534")
         !!                                         "apa" "\n" t '("!!  - "))
         !! -->
-        !!  - Dormand, J. R., & Prince, P. J. (1980). A family of embedded Runge-Kutta formulae. Journal of 
-        !!    Computational and Applied Mathematics, 6(1), 19-26. https://doi.org/10.1016/0771-050x(80)90013-3
-        !!  - Hairer, E., Norsett, S. P., & Wanner, G. (2008). Solving Ordinary Differential Equations I: 
+        !!  - Dormand, J. R., & Prince, P. J. (1980). A family of embedded Runge-Kutta formulae. Journal
+        !!    of  Computational and Applied Mathematics, 6(1), 19-26.
+        !!    https://doi.org/10.1016/0771-050x(80)90013-3
+        !!  - Hairer, E., Norsett, S. P., & Wanner, G. (2008). Solving Ordinary Differential Equations I:
         !!    Nonstiff Problems (2nd ed.). Springer. https://doi.org/10.1007/978-3-540-78862-1
         !!  - Butcher, J. C. (2016). Numerical methods for ordinary differential equations (3rd
         !!    edition). Wiley. https://doi.org/10.1002/9781119121534
