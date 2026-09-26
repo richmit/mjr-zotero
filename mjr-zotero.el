@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.24
+;; Version:     1.25
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -123,7 +123,7 @@
 ;;
 ;; This will wrap the results in a "#+begin_export html" block.
 ;;
-;; ** Bibliographies in source code Doxygen comments
+;; ** Bibliographies in source code comments (with or without Doxygen)
 ;;
 ;; I like to include mini-bibliographies in function/subroutine comments.  We can embedd the code to generate the bibliography right in the comment.  I use
 ;; https://github.com/richmit/mjr-eval/ to evaluate these code blocks.  If we are using Doxygen we can prevent the bibliography generation code from appearing
@@ -136,7 +136,7 @@
 ;;         !!                                         "apa" "\n" t '("!!  - "))
 ;;         !! -->
 ;;         !!  - Dormand, J. R., & Prince, P. J. (1980). A family of embedded Runge-Kutta formulae. Journal
-;;         !!    of  Computational and Applied Mathematics, 6(1), 19-26.
+;;         !!    of Computational and Applied Mathematics, 6(1), 19-26.
 ;;         !!    https://doi.org/10.1016/0771-050x(80)90013-3
 ;;         !!  - Hairer, E., Norsett, S. P., & Wanner, G. (2008). Solving Ordinary Differential Equations I:
 ;;         !!    Nonstiff Problems (2nd ed.). Springer. https://doi.org/10.1007/978-3-540-78862-1

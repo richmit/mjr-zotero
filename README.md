@@ -95,7 +95,7 @@ is generated from an org-mode file (https://www.mitchr.me/SS/reading/index.org) 
 
 This will wrap the results in a "#+begin_export html" block.
 
-## Bibliographies in source code Doxygen comments
+## Bibliographies in source code comments (with or without Doxygen)
 
 I like to include mini-bibliographies in function/subroutine comments.  We can embedd the code to generate the bibliography right in the comment.  I use
 https://github.com/richmit/mjr-eval/ to evaluate these code blocks.  If we are using Doxygen we can prevent the bibliography generation code from appearing
@@ -108,7 +108,7 @@ in the rendered documentation by surrounding it in HTML comment characters.  Her
         !!                                         "apa" "\n" t '("!!  - "))
         !! -->
         !!  - Dormand, J. R., & Prince, P. J. (1980). A family of embedded Runge-Kutta formulae. Journal
-        !!    of  Computational and Applied Mathematics, 6(1), 19-26.
+        !!    of Computational and Applied Mathematics, 6(1), 19-26.
         !!    https://doi.org/10.1016/0771-050x(80)90013-3
         !!  - Hairer, E., Norsett, S. P., & Wanner, G. (2008). Solving Ordinary Differential Equations I:
         !!    Nonstiff Problems (2nd ed.). Springer. https://doi.org/10.1007/978-3-540-78862-1
