@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.21
+;; Version:     1.23
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -61,7 +61,7 @@
 ;;  - `mjr-zotero-db-cache-populate'        Empty the Emacs Zotero DB cache, and then fill it with fresh data from Zotero
 ;;  - `mjr-zotero-db-cache-update'          Used for automatic `mjr-zotero-db-cache' updates
 ;;  - `mjr-zotero-db-cache-open-attachment' Search for an entry in `mjr-zotero-db-cache', and open it's attachment
-;;  - `mjr-zotero-db-cache-open-item'       Search for an entry in `mjr-zotero-db-cache', and open it in Zotero
+;;  - `mjr-zotero-db-cache-select-item'     Search for an entry in `mjr-zotero-db-cache', and select it in Zotero
 ;;
 ;; The next level of functionality works directly with the Zotero Local API.  The intent is to provide a low friction interface to the Zotero Local API for
 ;; programmatic use.  These functions form the ground work for the higher level functions mentioned above.  I expect these functions are rarely called directly
@@ -78,7 +78,8 @@
 ;; The next level of functionality works with the Zotero connector.
 ;;
 ;;  - `mjr-zotero-connector-link-to-item-key' Extract an item-key from a connector link
-;;  - `mjr-zotero-connector-open-item'        Open an item in Zotero
+;;  - `mjr-zotero-connector-select-item'      Open an item in Zotero
+;;  - `mjr-zotero-connector-open-pdf'         Open a PDF stored in Zotero
 ;;
 ;; The lowest level of functionality provides what might be called Zotero adjacent operations.  For example working with data structures used by by all of
 ;; the functions above.
@@ -289,7 +290,7 @@ The default value recognizes:
   "If STR is a string and appears to specify a known data-key, then return a cons cell with the key and value.  Otherwise return NIL."
   (when (stringp str)
     (if (string-match-p "\\`(.*)\\'" str)
-        (read-from-string string)
+        (read-from-string str)
         (let ((case-fold-search nil))
           (cl-loop for (k re) in mjr-zotero-data-key-re
                    for m = (and (string-match (concat  "\\`" re "\\'") str) (match-string 1 str))
@@ -356,7 +357,7 @@ Without an active region and a key value is found near the point, then:
                                    (list mjr-zotero-element-match-default-predicate k (substring-no-properties m))))))))
 
 ;; ;; Some targets for at-point tests
-;; ;; For an interactive demo, try mjr-zotero-db-cache-open-item or mjr-zotero-db-cache-open-attachment with these
+;; ;; For an interactive demo, try mjr-zotero-db-cache-select-item or mjr-zotero-db-cache-open-attachment with these
 ;;
 
 ;; 686PNJGS
@@ -662,7 +663,7 @@ The default includes the following:
 (defun mjr-zotero-local-api-bib (item-key-or-list-of-item-keys &optional bib-style between-string plain-text)
   "Generate a formatted bibliographic entry for an item via the Zotero Local API.
 Uses `mjr-zotero-local-api-bib-style-default' if BIB-STYLE is not provided or is NIL.
-If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is used to convert the entry, and PLAIN-TEXT is passed as the PREPEND-STRING argument."
+If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is used to convert the entry, and PLAIN-TEXT used for its optional arguments."
   (mapconcat (lambda (x) (let* ((e (mjr-zotero-local-api-call 'hash-table
                                                               (concat "/api/users/0/items/" x)
                                                               (cons "include" "bib")
@@ -673,7 +674,7 @@ If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is used to con
                            (unless (and b (stringp b) (not (string-empty-p b)))
                              (error "mjr-zotero-local-api-bib: Unable to generate formatted bibliographic entry."))
                            (if plain-text
-                               (or (mjr-zotero-html-bib-to-plain-text b plain-text)
+                               (or (apply #' mjr-zotero-html-bib-to-plain-text b (when (listp plain-text) plain-text))
                                    (error "mjr-zotero-local-api-bib: Plain-Text conversion failed for %s!" b))
                                b)))
              (if (listp item-key-or-list-of-item-keys)
@@ -716,7 +717,7 @@ When run interactively, all the user is prompted for all argument values.  See `
                          (completing-read     "Export format: " mjr-zotero-local-api-export-format-prompt nil nil mjr-zotero-local-api-export-format-default))))
   (if-let* ((result (mjr-zotero-local-api-call nil "/api/users/0/items/top"
                                                (cons "format" (or format mjr-zotero-local-api-export-format-default))
-                                               (cons "tag"    (or tag    mjr-zotero-default-tag))))
+                                               (cons "tag"    (or tag    mjr-zotero-local-api-tag-default))))
             (       (stringp result)))
       (write-region result nil filename nil nil nil nil)
     (error "mjr-zotero-local-api-export: Something went wrong pulling data from Zotero")))
@@ -741,11 +742,20 @@ When run interactively, all the user is prompted for all argument values.  See `
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
-(defun mjr-zotero-connector-open-item (item-key)
+(defun mjr-zotero-connector-select-item (item-key)
   "Given an item-key, use the Zotero connector to open Zotero and select an item."
-    (browse-url (concat "zotero://select/items/0_" item-key)))
+    (browse-url (concat "zotero://select/library/items/" item-key)))
 
-;; (mjr-zotero-connector-open-item "7JU94X7V")
+;; (mjr-zotero-connector-select-item "7JU94X7V")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
+(defun mjr-zotero-connector-open-pdf (item-key)
+  "Given an item-key for a PDF, use the Zotero connector to view the PDF.
+Note the item-key must be for the PDF, not the parent item it is attached to."
+    (browse-url (concat "zotero://open-pdf/library/items/" item-key)))
+
+;; (mjr-zotero-connector-open-pdf "ISGI7BSY")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -945,14 +955,29 @@ This function returns a list with a single entry for each argument."
 ;; (mjr-zotero-db-cache-search-unique "X9FA49XE")
 ;; ("X9FA49XE")
 ;;
+;; (mjr-zotero-db-cache-search-unique "zotero://select/items/0_X9FA49XE")
+;; ("X9FA49XE")
+;;
 ;; (mjr-zotero-db-cache-search-unique "10.1142/7200")
 ;; ("X9FA49XE")
 ;;
 ;; (mjr-zotero-db-cache-search-unique "978-981-283-924-4")
 ;; ("X9FA49XE")
 ;;
+;; (mjr-zotero-db-cache-search-unique "isbn:978-981-283-924-4")
+;; ("X9FA49XE")
+;; 
+;; (mjr-zotero-db-cache-search-unique "ISBN:978-981-283-924-4")
+;; ("X9FA49XE")
+;; 
 ;; (mjr-zotero-db-cache-search-unique "0-7167-1480-9")
 ;; ("5KZ82Z3K")
+;;
+;; (mjr-zotero-db-cache-search-unique "\\cite{2005qi-aoancs}")
+;; ("MIXEQ7HJ")
+;; 
+;; (mjr-zotero-db-cache-search-unique "[cite:@2005qi-aoancs]")
+;; ("MIXEQ7HJ")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defcustom mjr-zotero-db-cache-sort-multi-keys '(("data" "creators" 0 "lastName")
@@ -1010,7 +1035,7 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
  - BIB-STYLE: String with a a bibliographic style known to Zotero.  If NIL, then `mjr-zotero-local-api-bib-style-default' is used.
    This value is *only* used when this function calls `mjr-zotero-local-api-bib' for a fresh bibliographic entry.
  - BETWEEN-STRING is used to separate each formatted bibliographic entry produced.
- - PLAIN-TEXT being non-NIL results in a `mjr-zotero-html-bib-to-plain-text' call with PLAIN-TEXT passed as the PREPEND-STRING argument.
+ - If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is used to convert the entry, and PLAIN-TEXT used for its optional arguments.
  - If FRESH-BIB is NIL, then bibliographic entries in `mjr-zotero-db-cache' are used and `mjr-zotero-local-api-bib' is only used if
    the value is not found in the cache.  When FRESH-BIB is non-NIL, `mjr-zotero-local-api-bib' is used for every entry."
   (let* ((list-of-item-keys (if (null match-specifiers)
@@ -1028,7 +1053,7 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
                                                          (puthash "bib" ba d)
                                                          (error "mjr-zotero-db-cache-bib: Unable to produce bibliographic entry for %s!" k)))))
                                      collect (if plain-text
-                                                 (or (mjr-zotero-html-bib-to-plain-text b plain-text)
+                                                 (or (apply #'mjr-zotero-html-bib-to-plain-text b (when (listp plain-text) plain-text))
                                                      (error "mjr-zotero-db-cache-bib: Plain-Text conversion failed for %s!" b))
                                                  b))))
     (string-join list-of-bibs (or between-string "\n\n"))))
@@ -1074,7 +1099,7 @@ occurs otherwise."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
-(defun mjr-zotero-db-cache-open-item (match-specifier &optional no-error)
+(defun mjr-zotero-db-cache-select-item (match-specifier &optional no-error)
   "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use the Zotero connector switch to zotero and select the found entry.
 if MATCH-SPECIFIER matched something in `mjr-zotero-db-cache', the return is non-NIL.  If it didn't match, then NIL is when NO-ERROR is non-NIL and an error
 occurs otherwise."
@@ -1082,11 +1107,11 @@ occurs otherwise."
   (when-let ((item-key (if no-error
                                (ignore-errors (car (mjr-zotero-db-cache-search-unique match-specifier)))
                                (car (mjr-zotero-db-cache-search-unique match-specifier)))))
-    (mjr-zotero-connector-open-item item-key)
+    (mjr-zotero-connector-select-item item-key)
     t))
 
-;; (mjr-zotero-db-cache-open-item "10.1016/0893-9659(89)90079-7")
-;; (mjr-zotero-db-cache-open-item "7JU94X7V")
+;; (mjr-zotero-db-cache-select-item "10.1016/0893-9659(89)90079-7")
+;; (mjr-zotero-db-cache-select-item "7JU94X7V")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
@@ -1117,9 +1142,6 @@ Used interactively:
       (kill-new b)
       (message "Bibliography (%d chars) placed on kill ring!" (length b)))
     b))
-
-;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7")
-;; (mjr-zotero-db-cache-open-item "7JU94X7V")
 
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" nil 't)
 ;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
