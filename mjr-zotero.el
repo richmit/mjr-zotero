@@ -143,8 +143,11 @@
 ;;         !!  - Butcher, J. C. (2016). Numerical methods for ordinary differential equations (3rd
 ;;         !!    edition). Wiley. https://doi.org/10.1002/9781119121534
 ;;
-;; This example is from https://github.com/richmit/MRKISS/blob/main/lib/mrkiss_eerk_dormand_prince_5_4.f90
-;; A rendered version of the comment is here: https://www.mitchr.me/SS/MRKISS/doc-lib/html/namespacemrkiss__eerk__dormand__prince__5__4.html
+;; This example is from: \
+;; https://github.com/richmit/MRKISS/blob/main/lib/mrkiss_eerk_dormand_prince_5_4.f90
+;;
+;; A rendered version of the comment is here: \
+;; https://www.mitchr.me/SS/MRKISS/doc-lib/html/namespacemrkiss__eerk__dormand__prince__5__4.html
 ;;
 ;; ** Generating A Bibliography
 ;;
