@@ -127,7 +127,7 @@
 ;;
 ;; I like to include mini-bibliographies in function/subroutine comments.  We can embedd the code to generate the bibliography right in the comment.  I use
 ;; https://github.com/richmit/mjr-eval/ to evaluate these code blocks.  If we are using Doxygen we can prevent the bibliography generation code from appearing
-;; in the rendered documentation by surrounding it in HTML comment characters.  Here is an example:
+;; in the rendered documentation by surrounding it in HTML comment characters.  Here is an example of a Doxygen comment in Fortran:
 ;;
 ;;         !! @par References:
 ;;         !! <!-- :elisp>>> (mjr-zotero-db-cache-bib '("10.1016/0771-050x(80)90013-3"
@@ -148,6 +148,8 @@
 ;;
 ;; A rendered version of the comment is here: \
 ;; https://www.mitchr.me/SS/MRKISS/doc-lib/html/namespacemrkiss__eerk__dormand__prince__5__4.html
+;;
+;; Many more examples may be found here: https://github.com/richmit/MRKISS/tree/main/lib
 ;;
 ;; ** Generating A Bibliography
 ;;
@@ -210,6 +212,7 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
                            (#x00f8 . "o")
                            (#x00e4 . "a")
                            (#x0161 . "s")
+                           (#x00dc . "U")
                            (#x201c . "\"")
                            (#x201D . "\"")
                            (#x00f6 . "o")))
