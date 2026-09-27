@@ -97,7 +97,7 @@ This will wrap the results in a "#+begin_export html" block.
 
 ## Bibliographies in source code comments (with or without Doxygen)
 
-I like to include mini-bibliographies in function/subroutine comments.  We can embedd the code to generate the bibliography right in the comment.  I use
+I like to include mini-bibliographies in function/subroutine comments.  We can place the code to generate the bibliography right in the comment.  I use
 https://github.com/richmit/mjr-eval/ to evaluate these code blocks.  If we are using Doxygen we can prevent the bibliography generation code from appearing
 in the rendered documentation by surrounding it in HTML comment characters.  Here is an example of a Doxygen comment in Fortran:
 
@@ -122,6 +122,28 @@ A rendered version of the comment is here: \
 https://www.mitchr.me/SS/MRKISS/doc-lib/html/namespacemrkiss__eerk__dormand__prince__5__4.html
 
 Many more examples may be found here: https://github.com/richmit/MRKISS/tree/main/lib
+
+There is nothing special about Fortran in the above example.  We can do the same sorts of things in C++.  Just as above we prevent the generator code from
+appearing in the rendered documentation by enclosing it in HTML comment delimiters.  Here is an example:
+
+        /** Evaluate a polynomial.
+            @param poly The polynomial
+            @param x    x value at which to evaluate the polynomial 
+            @par Reference
+                 <!-- :elisp>>> (mjr-zotero-db-cache-bib '("10.1098/rspl.1815.0115"
+                                                           "10.1016/b978-1-4832-3272-0.50010-7"
+                                                           "10.1070/RM1966v021n01ABEH004147")
+                                                         "apa" "\n" t '("            - ")) -->
+              - Horner, W. G. (1819). A New Method of Solving Numerical Equations of All Orders, by 
+                Continuous Approximation. Philosophical Transactions of the Royal Society of 
+                London, 109, 308-335. https://doi.org/10.1098/rspl.1815.0115
+              - Ostrowski, A. (1954). On Two Problems in Abstract Algebra Connected with Horner's Rule.
+                Studies in Mathematics and Mechanics Presented to 
+                Richard von Mises, 40-48. https://doi.org/10.1016/b978-1-4832-3272-0.50010-7
+              - Pan, V. J. (1966). Methods of computing values of polynomials. 
+                Uspekhi Matematicheskikh Nauk [N. S.], 21(1(127)), 103-134. 
+                https://doi.org/10.1070/RM1966v021n01ABEH004147  */
+
 
 ## Generating A Bibliography
 
