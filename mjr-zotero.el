@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.27
+;; Version:     1.28
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -318,13 +318,14 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defcustom mjr-zotero-data-key-re
-  (list (list "key"         "\\(?:zotero://select/items/[0-9]_\\)?\\(?1:[0-9A-Z]\\{8\\}\\)" nil)
-        (list "key"         "\\(?:zotero://select/library/items/\\)?\\(?1:[0-9A-Z]\\{8\\}\\)" nil)
-        (list "DOI"         "\\(?:DOI:\\|doi:\\|https://doi.org/\\)?\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)" nil)
-        (list "ISBN"        "\\(?:[iI][sS][bB][nN]:?\\)?\\(?1:[0-9]\\(?:-?[0-9]\\)\\{8\\}\\(?:\\(?:-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)" nil)
-        (list "citationKey" "\\[cite:\\(?:[^@]*?\\)@\\(?1:[^[:space:]\n\r@]+\\)\\(?:[^@]*?\\)\\]" '(:delimited))
-        (list "citationKey" "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}" '(:delimited)))
+  (list (cons "key"         "\\b\\(?:zotero://select/items/[0-9]_\\)?\\(?1:[0-9A-Z]\\{8\\}\\)\\b")
+        (cons "key"         "\\b\\(?:zotero://select/library/items/\\)?\\(?1:[0-9A-Z]\\{8\\}\\)\\b")
+        (cons "DOI"         "\\b\\(?:[dD][oO][iI]:\\|https://doi.org/\\)?\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)\\b")
+        (cons "ISBN"        "\\b\\(?:[iI][sS][bB][nN]:?\\)?\\(?1:[0-9]\\(?:-?[0-9]\\)\\{8\\}\\(?:\\(?:-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)\\b")
+        (cons "citationKey" "\\[cite:\\(?:[^@]*?\\)@\\(?1:[^[:space:]\n\r@]+\\)\\(?:[^@]*?\\)\\]")
+        (cons "citationKey" "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}"))
 ;; TODO MJR <2026-09-26> mjr-zotero-data-key-re: Embbed key option. key=NIL. key from Group 2. (list nil "\\[<<\\(?2:[a-zA-Z0-9]+\\):\\(?2:[^>\n\r]+\\)>>\\]" '(:delimited))
+;; TODO MJR <2026-09-28> mjr-zotero-data-key-re: Add personal call number regex: MJR-CN:9999aaaaaa
   "Regular expressions for identify strings as keys.
 
 Each sub-list contains:
@@ -349,8 +350,8 @@ The default value recognizes:
     (if (string-match-p "\\`(.*)\\'" str)
         (read-from-string str)
         (let ((case-fold-search nil))
-          (cl-loop for (k re) in mjr-zotero-data-key-re
-                   for m = (and (string-match (concat  "\\`" re "\\'") str) (match-string 1 str))
+          (cl-loop for (k r) in mjr-zotero-data-key-re
+                   for m = (and (string-match (concat  "\\`" (string-remove-suffix "\\b" (string-remove-prefix "\\b" r)) "\\'") str) (match-string 1 str))
                    when m
                    do (cl-return (if (and return-item-key-as-string (string-equal k "key"))
                                      m
@@ -412,15 +413,8 @@ Without an active region and a key value is found near the point, then:
       (when-let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
         (mjr-zotero-string-to-match-specifier s))
       (let ((case-fold-search nil))
-        (cl-loop for v in mjr-zotero-data-key-re
-                 for k = (car v)
-                 for r = (cadr v)
-                 for o = (cddr v)
-                 for m = (and (thing-at-point-looking-at (if (member :delimited o)
-                                                             r
-                                                             (concat "\\b" r "\\b"))
-                                                         100)
-                              (match-string 1))
+        (cl-loop for (k r) in mjr-zotero-data-key-re
+                 for m = (and (thing-at-point-looking-at r 100) (match-string 1))
                  when m
                    do (cl-return (if (and return-item-key-as-string (string-equal k "key"))
                                    (substring-no-properties m)
