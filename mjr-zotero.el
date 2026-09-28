@@ -232,6 +232,7 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
                            (#x2019 . "'")
                            (#x00fc . "u")
                            (#x00f8 . "o")
+                           (#x00e8 . "a")
                            (#x00e4 . "a")
                            (#x0161 . "s")
                            (#x00dc . "U")
