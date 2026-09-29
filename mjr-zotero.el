@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.28
+;; Version:     1.29
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -172,6 +172,14 @@
 ;;                 Uspekhi Matematicheskikh Nauk [N. S.], 21(1(127)), 103-134. 
 ;;                 https://doi.org/10.1070/RM1966v021n01ABEH004147  */
 ;;
+;; ** Tips
+;;
+;; - If an item has no unique key (like a DOI or an ISBN), then create one.  Two good options are:
+;;   - Use the citationKey field
+;;   - Use the callNumber & libraryCatalog fields to invent your own, personal call number system that is easy to identify
+;;     with a regular expression so you can add it to `mjr-zotero-data-key-re'
+;; - Use tags for each project to identify the entries used by that project.
+;;     - 
 ;;
 ;; ** Generating A Bibliography
 ;;
@@ -323,9 +331,11 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
         (cons "DOI"         "\\b\\(?:[dD][oO][iI]:\\|https://doi.org/\\)?\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)\\b")
         (cons "ISBN"        "\\b\\(?:[iI][sS][bB][nN]:?\\)?\\(?1:[0-9]\\(?:-?[0-9]\\)\\{8\\}\\(?:\\(?:-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)\\b")
         (cons "citationKey" "\\[cite:\\(?:[^@]*?\\)@\\(?1:[^[:space:]\n\r@]+\\)\\(?:[^@]*?\\)\\]")
-        (cons "citationKey" "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}"))
-;; TODO MJR <2026-09-26> mjr-zotero-data-key-re: Embbed key option. key=NIL. key from Group 2. (list nil "\\[<<\\(?2:[a-zA-Z0-9]+\\):\\(?2:[^>\n\r]+\\)>>\\]" '(:delimited))
+        (cons "citationKey" "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}")          
+        (cons "reportNumber" "\\b\\(?1:\\(?:NASA\\|JPL\\)-TR-[A-Z0-9][A-Z0-9-]+[A-Z0-9]\\)\\b"))
+;; TODO MJR <2026-09-26> mjr-zotero-data-key-re: Embbed key option. key=NIL. key from Group 2. (list nil "\\[<<\\(?2:[a-zA-Z0-9]+\\):\\(?2:[^>\n\r]+\\)>>\\]"
 ;; TODO MJR <2026-09-28> mjr-zotero-data-key-re: Add personal call number regex: MJR-CN:9999aaaaaa
+;; TODO MJR <2026-09-29> mjr-zotero.el: How to deal with "ADS Bibcode: 1979ZhETF..77..617R" as a substring of extras?
   "Regular expressions for identify strings as keys.
 
 Each sub-list contains:
@@ -339,18 +349,20 @@ The default value recognizes:
   - ISBN numbers (with or without an ISBN:/isbn: prefix)
   - DOIs (with or without a doi: prefix or as part of a doi.org URL)
   - org-mode citations
-  - LaTeX citations"
+  - LaTeX citations
+  - NASA/JPL Technical Reports"
   :type '(repeat (cons string string))
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-string-to-match-specifier (str &optional return-item-key-as-string)
   "If STR is a string and appears to specify a known data-key, then return a cons cell with the key and value.  Otherwise return NIL."
+;; TODO MJR <2026-09-29> mjr-zotero-string-to-match-specifier: Should we use mjr-zotero-element-match-default-predicate, equal, or something custom to each re?
   (when (stringp str)
     (if (string-match-p "\\`(.*)\\'" str)
         (read-from-string str)
         (let ((case-fold-search nil))
-          (cl-loop for (k r) in mjr-zotero-data-key-re
+          (cl-loop for (k . r) in mjr-zotero-data-key-re
                    for m = (and (string-match (concat  "\\`" (string-remove-suffix "\\b" (string-remove-prefix "\\b" r)) "\\'") str) (match-string 1 str))
                    when m
                    do (cl-return (if (and return-item-key-as-string (string-equal k "key"))
@@ -401,6 +413,9 @@ The default value recognizes:
 ;;
 ;; (mjr-zotero-string-to-match-specifier "dog")
 ;; nil
+;;
+;; (mjr-zotero-string-to-match-specifier "NASA-TR-R-381")
+;; (:equal "reportNumber" "NASA-TR-R-381")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-match-specifier-at-point (&optional return-item-key-as-string)
@@ -409,14 +424,15 @@ If the region is active, then the  return is the value of `mjr-zotero-string-to-
 Without an active region and a key value is found near the point, then:
  - If the key value is an item-key, then it is returned as if when RETURN-ITEM-KEY-AS-STRING is non-NIL
  - Otherwise a list-form match-specifier is returned."
+;; TODO MJR <2026-09-29> mjr-zotero-match-specifier-at-point: Should we use mjr-zotero-element-match-default-predicate, equal, or something custom to each re?
   (if (and transient-mark-mode (region-active-p) (mark))
       (when-let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
         (mjr-zotero-string-to-match-specifier s))
       (let ((case-fold-search nil))
-        (cl-loop for (k r) in mjr-zotero-data-key-re
+        (cl-loop for (k . r) in mjr-zotero-data-key-re
                  for m = (and (thing-at-point-looking-at r 100) (match-string 1))
                  when m
-                   do (cl-return (if (and return-item-key-as-string (string-equal k "key"))
+                 do (cl-return (if (and return-item-key-as-string (string-equal k "key"))
                                    (substring-no-properties m)
                                    (list mjr-zotero-element-match-default-predicate k (substring-no-properties m))))))))
 
