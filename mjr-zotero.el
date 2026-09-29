@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.29
+;; Version:     1.30
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -179,7 +179,6 @@
 ;;   - Use the callNumber & libraryCatalog fields to invent your own, personal call number system that is easy to identify
 ;;     with a regular expression so you can add it to `mjr-zotero-data-key-re'
 ;; - Use tags for each project to identify the entries used by that project.
-;;     - 
 ;;
 ;; ** Generating A Bibliography
 ;;

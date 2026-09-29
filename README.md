@@ -144,6 +144,13 @@ appearing in the rendered documentation by enclosing it in HTML comment delimite
                 Uspekhi Matematicheskikh Nauk [N. S.], 21(1(127)), 103-134. 
                 https://doi.org/10.1070/RM1966v021n01ABEH004147  */
 
+## Tips
+
+- If an item has no unique key (like a DOI or an ISBN), then create one.  Two good options are:
+  - Use the citationKey field
+  - Use the callNumber & libraryCatalog fields to invent your own, personal call number system that is easy to identify
+    with a regular expression so you can add it to `mjr-zotero-data-key-re`
+- Use tags for each project to identify the entries used by that project.
 
 ## Generating A Bibliography
 
