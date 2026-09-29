@@ -198,13 +198,11 @@
 ;;
 ;; Note that mjr-thingy-lookeruper (https://github.com/richmit/mjr-thingy-lookeruper) supports this package, so install it too if you wish.
 
-
 ;;; Code:
 
 (require 'cl-lib)
 (require 'url)
 (require 'subr-x)
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
@@ -333,9 +331,9 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
         (cons "citationKey" "\\[cite:\\(?:[^@]*?\\)@\\(?1:[^[:space:]\n\r@]+\\)\\(?:[^@]*?\\)\\]")
         (cons "citationKey" "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}")          
         (cons "reportNumber" "\\b\\(?1:\\(?:NASA\\|JPL\\)-TR-[A-Z0-9][A-Z0-9-]+[A-Z0-9]\\)\\b"))
-;; TODO MJR <2026-09-26> mjr-zotero-data-key-re: Embbed key option. key=NIL. key from Group 2. (list nil "\\[<<\\(?2:[a-zA-Z0-9]+\\):\\(?2:[^>\n\r]+\\)>>\\]"
-;; TODO MJR <2026-09-28> mjr-zotero-data-key-re: Add personal call number regex: MJR-CN:9999aaaaaa
-;; TODO MJR <2026-09-29> mjr-zotero.el: How to deal with "ADS Bibcode: 1979ZhETF..77..617R" as a substring of extras?
+  ;; TODO MJR <2026-09-26> mjr-zotero-data-key-re: Embbed key option. key=NIL. key from Group 2. (list nil "\\[<<\\(?2:[a-zA-Z0-9]+\\):\\(?2:[^>\n\r]+\\)>>\\]"
+  ;; TODO MJR <2026-09-28> mjr-zotero-data-key-re: Add personal call number regex: MJR-CN:9999aaaaaa
+  ;; TODO MJR <2026-09-29> mjr-zotero.el: How to deal with "ADS Bibcode: 1979ZhETF..77..617R" as a substring of extras?
   "Regular expressions for identify strings as keys.
 
 Each sub-list contains:
@@ -357,7 +355,7 @@ The default value recognizes:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-string-to-match-specifier (str &optional return-item-key-as-string)
   "If STR is a string and appears to specify a known data-key, then return a cons cell with the key and value.  Otherwise return NIL."
-;; TODO MJR <2026-09-29> mjr-zotero-string-to-match-specifier: Should we use mjr-zotero-element-match-default-predicate, equal, or something custom to each re?
+  ;; TODO MJR <2026-09-29> mjr-zotero-string-to-match-specifier: Should we use mjr-zotero-element-match-default-predicate, equal, or something custom to each re?
   (when (stringp str)
     (if (string-match-p "\\`(.*)\\'" str)
         (read-from-string str)
@@ -424,7 +422,7 @@ If the region is active, then the  return is the value of `mjr-zotero-string-to-
 Without an active region and a key value is found near the point, then:
  - If the key value is an item-key, then it is returned as if when RETURN-ITEM-KEY-AS-STRING is non-NIL
  - Otherwise a list-form match-specifier is returned."
-;; TODO MJR <2026-09-29> mjr-zotero-match-specifier-at-point: Should we use mjr-zotero-element-match-default-predicate, equal, or something custom to each re?
+  ;; TODO MJR <2026-09-29> mjr-zotero-match-specifier-at-point: Should we use mjr-zotero-element-match-default-predicate, equal, or something custom to each re?
   (if (and transient-mark-mode (region-active-p) (mark))
       (when-let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
         (mjr-zotero-string-to-match-specifier s))
@@ -721,12 +719,12 @@ See `mjr-zotero-local-api-search' for additional information regarding the synta
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defcustom mjr-zotero-prompt-bib-style-prompt (list "apa"
-                                              "apa-annotated-bibliography"
-                                              "apa-single-spaced"
-                                              "chicago-note-bibliography"
-                                              "modern-language-association"
-                                              "chicago-author-date"
-                                              "harvard-cite-them-right")
+                                                    "apa-annotated-bibliography"
+                                                    "apa-single-spaced"
+                                                    "chicago-note-bibliography"
+                                                    "modern-language-association"
+                                                    "chicago-author-date"
+                                                    "harvard-cite-them-right")
   "List of bibliography styles that appear in interactive prompts.
 The default includes the following:
   - apa .......................... My go-to most of the time.  Best for on the web where we can adjust it with CSS.
@@ -774,8 +772,8 @@ If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is used to con
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
 (defcustom mjr-zotero-local-api-export-format-prompt '("csljson"
-                                           "biblatex"
-                                           "bibtex")
+                                                       "biblatex"
+                                                       "bibtex")
   "A list of export formats used for prompts."
   :type '(repeat string)
   :group 'mjr-zotero)
@@ -813,7 +811,7 @@ When run interactively, all the user is prompted for all argument values.  See `
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-connector-link-to-item-key (url)
   "Transform a Zotero link for the Zotero connector into a Zotero item ID."
-;; TODO MJR <2026-09-26> mjr-zotero-connector-link-to-item-key: Use mjr-zotero-string-to-match-specifier...
+  ;; TODO MJR <2026-09-26> mjr-zotero-connector-link-to-item-key: Use mjr-zotero-string-to-match-specifier...
   (let ((id (string-remove-prefix "zotero://select/items/0_" url)))
     (if (string-equal url id)
         (error "mjr-zotero-connector-link-to-item-key: Invalid connector item link!")
@@ -825,7 +823,7 @@ When run interactively, all the user is prompted for all argument values.  See `
 ;;;###autoload
 (defun mjr-zotero-connector-select-item (item-key)
   "Given an item-key, use the Zotero connector to open Zotero and select an item."
-    (browse-url (concat "zotero://select/library/items/" item-key)))
+  (browse-url (concat "zotero://select/library/items/" item-key)))
 
 ;; (mjr-zotero-connector-select-item "7JU94X7V")
 
@@ -834,7 +832,7 @@ When run interactively, all the user is prompted for all argument values.  See `
 (defun mjr-zotero-connector-open-pdf (item-key)
   "Given an item-key for a PDF, use the Zotero connector to view the PDF.
 Note the item-key must be for the PDF, not the parent item it is attached to."
-    (browse-url (concat "zotero://open-pdf/library/items/" item-key)))
+  (browse-url (concat "zotero://open-pdf/library/items/" item-key)))
 
 ;; (mjr-zotero-connector-open-pdf "ISGI7BSY")
 
@@ -1186,8 +1184,8 @@ if MATCH-SPECIFIER matched something in `mjr-zotero-db-cache', the return is non
 occurs otherwise."
   (interactive (list (mjr-zotero-match-specifier-at-point)))
   (when-let ((item-key (if no-error
-                               (ignore-errors (car (mjr-zotero-db-cache-search-unique match-specifier)))
-                               (car (mjr-zotero-db-cache-search-unique match-specifier)))))
+                           (ignore-errors (car (mjr-zotero-db-cache-search-unique match-specifier)))
+                           (car (mjr-zotero-db-cache-search-unique match-specifier)))))
     (mjr-zotero-connector-select-item item-key)
     t))
 
