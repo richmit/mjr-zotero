@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.34
+;; Version:     1.35
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -677,9 +677,11 @@ The Zotero Local API must be enabled in the Zotero client:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-local-api-get-entry (item-key)
   "Pull item data for Zotero object with the given ITEM-KEY via the Zotero Local API."
-  (if-let ((responce (mjr-zotero-local-api-call 'hash-table (list "/api/users/0/items" item-key))))
-      responce
-    (error "mjr-zotero-local-api-get-entry: Something went wrong")))
+  (if (mjr-zotero-looks-like-item-key item-key)
+      (if-let ((responce (mjr-zotero-local-api-call 'hash-table (list "/api/users/0/items" item-key))))
+          responce
+        (error "mjr-zotero-local-api-get-entry: Something went wrong"))
+      (error "mjr-zotero-local-api-get-entry: ITEM-KEY (%s) is invalid!" item-key)))
 
 ;; (mjr-zotero-local-api-get-entry "UEQBISIW")
 ;; (mjr-zotero-local-api-get-entry "WHVVHHDH")
@@ -706,11 +708,13 @@ TAG & Q are strings in the Zotero local API syntax.  For example, search for ite
 (defun mjr-zotero-local-api-open-attachment (item-key)
   "Visit the URL for the primary attachment of the given Zotero object via the Zotero Local API.
 WARNING: This will sometimes open the wrong attachment.  It should have a way to let the user select which attachment."
-  (if-let* ((attachment-url (mjr-zotero-recursive-getum nil 'string (mjr-zotero-local-api-get-entry item-key) "links" "attachment" "href"))
-            (attachment-id  (replace-regexp-in-string "^.*/" "" attachment-url))
-            (enclosure-url  (mjr-zotero-recursive-getum nil 'string (mjr-zotero-local-api-get-entry attachment-id) "links" "enclosure" "href")))
-      (browse-url enclosure-url)
-    (error "mjr-zotero-local-api-open-attachment: Something went wrong!")))
+  (if (mjr-zotero-looks-like-item-key item-key)
+      (if-let* ((attachment-url (mjr-zotero-recursive-getum nil 'string (mjr-zotero-local-api-get-entry item-key) "links" "attachment" "href"))
+                (attachment-id  (replace-regexp-in-string "^.*/" "" attachment-url))
+                (enclosure-url  (mjr-zotero-recursive-getum nil 'string (mjr-zotero-local-api-get-entry attachment-id) "links" "enclosure" "href")))
+          (browse-url enclosure-url)
+        (error "mjr-zotero-local-api-open-attachment: Something went wrong!"))
+      (error "mjr-zotero-local-api-open-attachment: ITEM-KEY (%s) is invalid!" item-key)))
 
 ;; (mjr-zotero-local-api-open-attachment "7JU94X7V")
 
@@ -753,10 +757,12 @@ The default includes the following:
   "Generate a formatted bibliographic entry for an item via the Zotero Local API.
 Uses `mjr-zotero-local-api-bib-style-default' if BIB-STYLE is not provided or is NIL.  If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is
 used to convert the entry. If PLAIN-TEXT is a non-NIL list, then its contents are used for optional arguments to `mjr-zotero-html-bib-to-plain-text'."
-  (mapconcat (lambda (x) (let* ((e (mjr-zotero-local-api-call 'hash-table
-                                                              (concat "/api/users/0/items/" x)
-                                                              (cons "include" "bib")
-                                                              (cons "style" (or bib-style mjr-zotero-local-api-bib-style-default))))
+  (mapconcat (lambda (x) (let* ((e   (if (mjr-zotero-looks-like-item-key x)
+                                         (mjr-zotero-local-api-call 'hash-table
+                                                                    (concat "/api/users/0/items/" x)
+                                                                    (cons "include" "bib")
+                                                                    (cons "style" (or bib-style mjr-zotero-local-api-bib-style-default)))
+                                         (error "mjr-zotero-local-api-bib: ITEM-KEY (%s) is invalid!" x)))
                                 (b (if e
                                        (gethash "bib" e)
                                        (error "mjr-zotero-local-api-bib: Local API call failed"))))
@@ -840,10 +846,12 @@ When run interactively, all the user is prompted for all argument values.  See `
 ;;;###autoload
 (defun mjr-zotero-connector-select-item (item-key)
   "Given an item-key, use the Zotero connector to open Zotero and select an item."
-  (let ((url (concat "zotero://select/library/items/" item-key)))
-    (when mjr-zotero-connector-verbose
-      (message "mjr-zotero-connector-select-item: URL: %s" url))
-  (browse-url url)))
+  (if (mjr-zotero-looks-like-item-key item-key)
+      (let ((url (concat "zotero://select/library/items/" item-key)))
+        (when mjr-zotero-connector-verbose
+          (message "mjr-zotero-connector-select-item: URL: %s" url))
+        (browse-url url))
+      (error "mjr-zotero-connector-select-item: ITEM-KEY (%s) is invalid!" item-key)))
 
 ;; (mjr-zotero-connector-select-item "7JU94X7V")
 
@@ -852,10 +860,12 @@ When run interactively, all the user is prompted for all argument values.  See `
 (defun mjr-zotero-connector-open-pdf (item-key)
   "Given an item-key for a PDF, use the Zotero connector to view the PDF.
 Note the item-key must be for the PDF, not the parent item it is attached to."
-  (let ((url (concat "zotero://open-pdf/library/items/" item-key)))
-    (when mjr-zotero-connector-verbose
-      (message "mjr-zotero-connector-open-pdf: URL: %s" url))
-    (browse-url url)))
+  (if (mjr-zotero-looks-like-item-key item-key)
+      (let ((url (concat "zotero://open-pdf/library/items/" item-key)))
+        (when mjr-zotero-connector-verbose
+          (message "mjr-zotero-connector-open-pdf: URL: %s" url))
+        (browse-url url))
+      (error "mjr-zotero-connector-open-pdf: ITEM-KEY (%s) is invalid!" item-key)))
 
 ;; (mjr-zotero-connector-open-pdf "ISGI7BSY")
 
