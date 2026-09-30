@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.31
+;; Version:     1.33
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -156,20 +156,20 @@
 ;;
 ;;         /** Evaluate a polynomial.
 ;;             @param poly The polynomial
-;;             @param x    x value at which to evaluate the polynomial 
+;;             @param x    x value at which to evaluate the polynomial
 ;;             @par Reference
 ;;                  <!-- :elisp>>> (mjr-zotero-db-cache-bib '("10.1098/rspl.1815.0115"
 ;;                                                            "10.1016/b978-1-4832-3272-0.50010-7"
 ;;                                                            "10.1070/RM1966v021n01ABEH004147")
 ;;                                                          "apa" "\n" t '("            - ")) -->
-;;               - Horner, W. G. (1819). A New Method of Solving Numerical Equations of All Orders, by 
-;;                 Continuous Approximation. Philosophical Transactions of the Royal Society of 
+;;               - Horner, W. G. (1819). A New Method of Solving Numerical Equations of All Orders, by
+;;                 Continuous Approximation. Philosophical Transactions of the Royal Society of
 ;;                 London, 109, 308-335. https://doi.org/10.1098/rspl.1815.0115
 ;;               - Ostrowski, A. (1954). On Two Problems in Abstract Algebra Connected with Horner's Rule.
-;;                 Studies in Mathematics and Mechanics Presented to 
+;;                 Studies in Mathematics and Mechanics Presented to
 ;;                 Richard von Mises, 40-48. https://doi.org/10.1016/b978-1-4832-3272-0.50010-7
-;;               - Pan, V. J. (1966). Methods of computing values of polynomials. 
-;;                 Uspekhi Matematicheskikh Nauk [N. S.], 21(1(127)), 103-134. 
+;;               - Pan, V. J. (1966). Methods of computing values of polynomials.
+;;                 Uspekhi Matematicheskikh Nauk [N. S.], 21(1(127)), 103-134.
 ;;                 https://doi.org/10.1070/RM1966v021n01ABEH004147  */
 ;;
 ;; ** Tips
@@ -219,7 +219,8 @@
 (defun mjr-zotero-html-bib-to-plain-text (b &optional prepend-string)
   "Convert a string with a Zotero HTML formatted bibliographic entry into plain, ASCII text.  Returns NIL if something goes wrong.
 This function will only convert strings that appear to be Zotero HTML formatted bibliographic entries, and thus should be idempotent under expected use cases.
-Conversion from Unicode to ASCII is limited; however, it gets most of the non-ASCII characters introduced from common Zotero bibliography styles."
+Conversion from Unicode to ASCII is limited; however, it gets most of the non-ASCII characters introduced from common Zotero bibliography styles.  Some
+limited conversion of LaTeX accent constructions are also supported."
   (when (stringp b)
     (if (not (string-match-p "\\`[[:space:]\n\r]*<div[[:space:]\n\r]*class" b))
         b
@@ -328,7 +329,7 @@ Conversion from Unicode to ASCII is limited; however, it gets most of the non-AS
         (cons "DOI"         "\\b\\(?:[dD][oO][iI]:\\|https://doi.org/\\)?\\(?1:10\\.[1-9][0-9]\\{3,\\}/[^[:space:]\n\r]\\{1,\\}\\)\\b")
         (cons "ISBN"        "\\b\\(?:[iI][sS][bB][nN]:?\\)?\\(?1:[0-9]\\(?:-?[0-9]\\)\\{8\\}\\(?:\\(?:-?[0-9]\\)\\{3\\}\\)?-?[0-9]\\)\\b")
         (cons "citationKey" "\\[cite:\\(?:[^@]*?\\)@\\(?1:[^[:space:]\n\r@]+\\)\\(?:[^@]*?\\)\\]")
-        (cons "citationKey" "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}")          
+        (cons "citationKey" "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}")
         (cons "reportNumber" "\\b\\(?1:\\(?:NASA\\|JPL\\)-TR-[A-Z0-9][A-Z0-9-]+[A-Z0-9]\\)\\b"))
   ;; TODO MJR <2026-09-26> mjr-zotero-data-key-re: Embbed key option. key=NIL. key from Group 2. (list nil "\\[<<\\(?2:[a-zA-Z0-9]+\\):\\(?2:[^>\n\r]+\\)>>\\]"
   ;; TODO MJR <2026-09-28> mjr-zotero-data-key-re: Add personal call number regex: MJR-CN:9999aaaaaa
@@ -352,9 +353,15 @@ The default value recognizes:
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defcustom mjr-zotero-data-key-predicate :equal
+  "This is the predicate when constructing list-form match-specifiers from strings."
+  :type 'symbol
+  :group 'mjr-zotero)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-string-to-match-specifier (str &optional return-item-key-as-string)
-  "If STR is a string and appears to specify a known data-key, then return a cons cell with the key and value.  Otherwise return NIL."
-  ;; TODO MJR <2026-09-29> mjr-zotero-string-to-match-specifier: Should we use mjr-zotero-element-match-default-predicate, equal, or something custom to each re?
+  "If STR is a string and appears to specify a known data-key, then return a cons cell with the key and value.  Otherwise return NIL.
+This function uses `mjr-zotero-data-key-predicate' as the predicate when construction list-form match-specifiers."
   (when (stringp str)
     (if (string-match-p "\\`(.*)\\'" str)
         (car (read-from-string str))
@@ -364,7 +371,7 @@ The default value recognizes:
                    when m
                    do (cl-return (if (and return-item-key-as-string (string-equal k "key"))
                                      m
-                                     (list mjr-zotero-element-match-default-predicate k m))))))))
+                                     (list mjr-zotero-data-key-predicate k m))))))))
 
 ;; (mjr-zotero-string-to-match-specifier "[cite:@2005qi-aoancs]")
 ;; (:equal "citationKey" "2005qi-aoancs")
@@ -423,8 +430,8 @@ The default value recognizes:
 If the region is active, then the  return is the value of `mjr-zotero-string-to-match-specifier' to applied to the region's contents.
 Without an active region and a key value is found near the point, then:
  - If the key value is an item-key, then it is returned as if when RETURN-ITEM-KEY-AS-STRING is non-NIL
- - Otherwise a list-form match-specifier is returned."
-  ;; TODO MJR <2026-09-29> mjr-zotero-match-specifier-at-point: Should we use mjr-zotero-element-match-default-predicate, equal, or something custom to each re?
+ - Otherwise a list-form match-specifier is returned.
+This function uses `mjr-zotero-data-key-predicate' as the predicate when construction list-form match-specifiers."
   (if (and transient-mark-mode (region-active-p) (mark))
       (when-let ((s (buffer-substring-no-properties (region-beginning) (region-end))))
         (mjr-zotero-string-to-match-specifier s))
@@ -434,7 +441,7 @@ Without an active region and a key value is found near the point, then:
                  when m
                  do (cl-return (if (and return-item-key-as-string (string-equal k "key"))
                                    (substring-no-properties m)
-                                   (list mjr-zotero-element-match-default-predicate k (substring-no-properties m))))))))
+                                   (list mjr-zotero-data-key-predicate k (substring-no-properties m))))))))
 
 ;; ;; Some targets for at-point tests
 ;; ;; For an interactive demo, try mjr-zotero-db-cache-select-item or mjr-zotero-db-cache-open-attachment with these
@@ -452,6 +459,7 @@ Without an active region and a key value is found near the point, then:
 ;; [cite:See: @2005qi-aoancs]
 ;; [cite:See: @2005qi-aoancs p. 10]
 ;; \cite:2005qi-aoancs}
+;; NASA-TR-R-381
 ;; (:equal "reportNumber" "NASA-TR-R-381")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -644,7 +652,7 @@ The Zotero Local API must be enabled in the Zotero client:
          (full-url (concat base-url (unless (string-empty-p srch-str)
                                       (concat "?" srch-str)))))
     (when mjr-zotero-local-api-verbose
-      (message "Zotero Local API Call: %s" full-url))
+      (message "mjr-zotero-local-api-call: URL: %s" full-url))
     (let ((res-buf  (url-retrieve-synchronously full-url t t mjr-zotero-local-api-timeout)))
       (when res-buf
         (with-current-buffer res-buf
@@ -683,7 +691,7 @@ The Zotero Local API must be enabled in the Zotero client:
 TAG & Q are strings in the Zotero local API syntax.  For example, search for items with the tag \"art\" or \"calc\" with a TAG value of \"art||calc\"."
   (if-let ((responce (mjr-zotero-local-api-call 'vector "/api/users/0/items/top" (cons "tag" tag) (cons "q" q) (when everything '("qmode" . "everything")))))
       responce
-    (error "mjr-zotero-local-api-get-entry: Something went wrong")))
+    (error "mjr-zotero-local-api-search: Something went wrong")))
 
 ;; (length (mjr-zotero-local-api-search nil "Murray" nil))
 ;; 10
@@ -743,8 +751,8 @@ The default includes the following:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-local-api-bib (item-key-or-list-of-item-keys &optional bib-style between-string plain-text)
   "Generate a formatted bibliographic entry for an item via the Zotero Local API.
-Uses `mjr-zotero-local-api-bib-style-default' if BIB-STYLE is not provided or is NIL.
-If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is used to convert the entry, and PLAIN-TEXT used for its optional arguments."
+Uses `mjr-zotero-local-api-bib-style-default' if BIB-STYLE is not provided or is NIL.  If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is
+used to convert the entry. If PLAIN-TEXT is a non-NIL list, then its contents are used for optional arguments to `mjr-zotero-html-bib-to-plain-text'."
   (mapconcat (lambda (x) (let* ((e (mjr-zotero-local-api-call 'hash-table
                                                               (concat "/api/users/0/items/" x)
                                                               (cons "include" "bib")
@@ -1087,7 +1095,6 @@ For examples:
         :lessp (lambda (x y) (cl-loop for keys in (or multi-keys mjr-zotero-db-cache-sort-multi-keys '(("key")))
                                       for xv = (apply #'mjr-zotero-recursive-getum 'error 'string mjr-zotero-db-cache x keys)
                                       for yv = (apply #'mjr-zotero-recursive-getum 'error 'string mjr-zotero-db-cache y keys)
-                                      ;;do (print (message "%s %s" xv yv))
                                       when (if (null xv)
                                                (not (null yv))
                                                (and (not (null yv)) (string-lessp xv yv)))
@@ -1117,7 +1124,8 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
  - BIB-STYLE: String with a a bibliographic style known to Zotero.  If NIL, then `mjr-zotero-local-api-bib-style-default' is used.
    This value is *only* used when this function calls `mjr-zotero-local-api-bib' for a fresh bibliographic entry.
  - BETWEEN-STRING is used to separate each formatted bibliographic entry produced.
- - If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is used to convert the entry, and PLAIN-TEXT used for its optional arguments.
+ - If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is used to convert the entry.
+   If PLAIN-TEXT is a non-NIL list, then its contents are used for optional arguments to  `mjr-zotero-html-bib-to-plain-text'.
  - If FRESH-BIB is NIL, then bibliographic entries in `mjr-zotero-db-cache' are used and `mjr-zotero-local-api-bib' is only used if
    the value is not found in the cache.  When FRESH-BIB is non-NIL, `mjr-zotero-local-api-bib' is used for every entry."
   (let* ((list-of-item-keys (if (null match-specifiers)
@@ -1167,14 +1175,14 @@ order they are provided.  Use `mjr-zotero-db-cache-search' to quickly identify l
 ;;;###autoload
 (defun mjr-zotero-db-cache-open-attachment (match-specifier &optional no-error)
   "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use `mjr-zotero-local-api-open-attachment' to open it's attachment.
-if MATCH-SPECIFIER matched something in `mjr-zotero-db-cache', the return is non-NIL.  If it didn't match, then NIL is when NO-ERROR is non-NIL and an error
-occurs otherwise."
+if MATCH-SPECIFIER matched something in `mjr-zotero-db-cache', the return is non-NIL.  If it didn't match, then return NIL when NO-ERROR is non-NIL and
+generate an error otherwise."
   (interactive (list (mjr-zotero-match-specifier-at-point)))
   (when-let ((item-key (if no-error
                            (ignore-errors (car (mjr-zotero-db-cache-search-unique match-specifier)))
                            (car (mjr-zotero-db-cache-search-unique match-specifier)))))
     (mjr-zotero-local-api-open-attachment item-key)
-    t))
+    item-key))
 
 ;; (mjr-zotero-db-cache-open-attachment "10.1016/0893-9659(89)90079-7")
 ;; (mjr-zotero-db-cache-open-attachment "7JU94X7V")
@@ -1182,15 +1190,15 @@ occurs otherwise."
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
 (defun mjr-zotero-db-cache-select-item (match-specifier &optional no-error)
-  "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use the Zotero connector switch to zotero and select the found entry.
-if MATCH-SPECIFIER matched something in `mjr-zotero-db-cache', the return is non-NIL.  If it didn't match, then NIL is when NO-ERROR is non-NIL and an error
-occurs otherwise."
+  "Find the Zotero object with `mjr-zotero-db-cache-search-unique', and use the Zotero connector to open zotero and select the entry.
+if MATCH-SPECIFIER matched something in `mjr-zotero-db-cache', the return is non-NIL.  If it didn't match, then return NIL when NO-ERROR is non-NIL and
+generate an error otherwise."
   (interactive (list (mjr-zotero-match-specifier-at-point)))
   (when-let ((item-key (if no-error
                            (ignore-errors (car (mjr-zotero-db-cache-search-unique match-specifier)))
                            (car (mjr-zotero-db-cache-search-unique match-specifier)))))
     (mjr-zotero-connector-select-item item-key)
-    t))
+    item-key))
 
 ;; (mjr-zotero-db-cache-select-item "10.1016/0893-9659(89)90079-7")
 ;; (mjr-zotero-db-cache-select-item "7JU94X7V")
@@ -1222,7 +1230,7 @@ Used interactively:
   (let ((b (mjr-zotero-db-cache-bib (mjr-zotero-db-cache-search match-specifier) bib-style nil fresh-bib plain-text)))
     (when (called-interactively-p 'any)
       (kill-new b)
-      (message "Bibliography (%d chars) placed on kill ring!" (length b)))
+      (message "mjr-zotero-db-cache-bib-interactive: Bibliography (%d chars) placed on kill ring!" (length b)))
     b))
 
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" nil 't)
@@ -1256,7 +1264,7 @@ Used interactively:
 ;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "harvard-cite-them-right" 't)
 ;; "Bogacki, P. and Shampine, L.F. (1989) \"A 3(2) pair of Runge - Kutta formulas,\" Applied Mathematics Letters, 2(4), pp. 321-325. Available
 ;; at: https://doi.org/10.1016/0893-9659(89)90079-7."
-
+;;
 ;; ;; Here is one I don't have in Zotero:
 ;; 10.1016/0771-050X(80)90013-3
 
