@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.30
+;; Version:     1.31
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -357,7 +357,7 @@ The default value recognizes:
   ;; TODO MJR <2026-09-29> mjr-zotero-string-to-match-specifier: Should we use mjr-zotero-element-match-default-predicate, equal, or something custom to each re?
   (when (stringp str)
     (if (string-match-p "\\`(.*)\\'" str)
-        (read-from-string str)
+        (car (read-from-string str))
         (let ((case-fold-search nil))
           (cl-loop for (k . r) in mjr-zotero-data-key-re
                    for m = (and (string-match (concat  "\\`" (string-remove-suffix "\\b" (string-remove-prefix "\\b" r)) "\\'") str) (match-string 1 str))
@@ -413,6 +413,9 @@ The default value recognizes:
 ;;
 ;; (mjr-zotero-string-to-match-specifier "NASA-TR-R-381")
 ;; (:equal "reportNumber" "NASA-TR-R-381")
+;;
+;; (mjr-zotero-string-to-match-specifier "(:equal \"reportNumber\" \"NASA-TR-R-381\")")
+;; (:equal "reportNumber" "NASA-TR-R-381")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-match-specifier-at-point (&optional return-item-key-as-string)
@@ -449,6 +452,7 @@ Without an active region and a key value is found near the point, then:
 ;; [cite:See: @2005qi-aoancs]
 ;; [cite:See: @2005qi-aoancs p. 10]
 ;; \cite:2005qi-aoancs}
+;; (:equal "reportNumber" "NASA-TR-R-381")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-element-match (element match-specifier)
