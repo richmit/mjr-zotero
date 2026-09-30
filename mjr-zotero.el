@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.33
+;; Version:     1.34
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -820,6 +820,12 @@ When run interactively, all the user is prompted for all argument values.  See `
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defcustom mjr-zotero-connector-verbose t
+  "If non-NIL then produce a `message' for each connector call."
+  :type 'boolean
+  :group 'mjr-zotero)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-connector-link-to-item-key (url)
   "Transform a Zotero link for the Zotero connector into a Zotero item ID."
   ;; TODO MJR <2026-09-26> mjr-zotero-connector-link-to-item-key: Use mjr-zotero-string-to-match-specifier...
@@ -834,7 +840,10 @@ When run interactively, all the user is prompted for all argument values.  See `
 ;;;###autoload
 (defun mjr-zotero-connector-select-item (item-key)
   "Given an item-key, use the Zotero connector to open Zotero and select an item."
-  (browse-url (concat "zotero://select/library/items/" item-key)))
+  (let ((url (concat "zotero://select/library/items/" item-key)))
+    (when mjr-zotero-connector-verbose
+      (message "mjr-zotero-connector-select-item: URL: %s" url))
+  (browse-url url)))
 
 ;; (mjr-zotero-connector-select-item "7JU94X7V")
 
@@ -843,7 +852,10 @@ When run interactively, all the user is prompted for all argument values.  See `
 (defun mjr-zotero-connector-open-pdf (item-key)
   "Given an item-key for a PDF, use the Zotero connector to view the PDF.
 Note the item-key must be for the PDF, not the parent item it is attached to."
-  (browse-url (concat "zotero://open-pdf/library/items/" item-key)))
+  (let ((url (concat "zotero://open-pdf/library/items/" item-key)))
+    (when mjr-zotero-connector-verbose
+      (message "mjr-zotero-connector-open-pdf: URL: %s" url))
+    (browse-url url)))
 
 ;; (mjr-zotero-connector-open-pdf "ISGI7BSY")
 
