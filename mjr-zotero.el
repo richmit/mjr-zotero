@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.40
+;; Version:     1.41
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -885,7 +885,6 @@ When run interactively, all the user is prompted for all argument values.  See `
 ;; "WHVVHHDH"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;###autoload
 (defun mjr-zotero-connector-select-item (item-key)
   "Given an item-key, use the Zotero connector to open Zotero and select an item."
   (if (mjr-zotero-looks-like-item-key item-key)
@@ -898,7 +897,6 @@ When run interactively, all the user is prompted for all argument values.  See `
 ;; (mjr-zotero-connector-select-item "7JU94X7V")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;###autoload
 (defun mjr-zotero-connector-open-pdf (item-key)
   "Given an item-key for a PDF, use the Zotero connector to view the PDF.
 Note the item-key must be for the PDF, not the parent item it is attached to."
@@ -1186,6 +1184,7 @@ For examples:
 ;; ("39Q8I3ZG" "E5Q8EIIZ" "Z7YQAJJ9" "JT9P48NQ")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defun mjr-zotero-db-cache-bib (match-specifiers &optional bib-style between-string fresh-bib plain-text)
   "Take a list of MATCH-SPECIFIERS, and generate a bibliography as a string.
 Each element of MATCH-SPECIFIERS is processed via `mjr-zotero-db-cache-search-unique' to produce an item-key.  The entries will be processed and output in the
