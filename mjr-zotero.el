@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.35
+;; Version:     1.36
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -331,9 +331,6 @@ limited conversion of LaTeX accent constructions are also supported."
         (cons "citationKey" "\\[cite:\\(?:[^@]*?\\)@\\(?1:[^[:space:]\n\r@]+\\)\\(?:[^@]*?\\)\\]")
         (cons "citationKey" "\\\\cite{\\(?1:[^{}\n\r[:space:]]+\\)}")
         (cons "reportNumber" "\\b\\(?1:\\(?:NASA\\|JPL\\)-TR-[A-Z0-9][A-Z0-9-]+[A-Z0-9]\\)\\b"))
-  ;; TODO MJR <2026-09-26> mjr-zotero-data-key-re: Embbed key option. key=NIL. key from Group 2. (list nil "\\[<<\\(?2:[a-zA-Z0-9]+\\):\\(?2:[^>\n\r]+\\)>>\\]"
-  ;; TODO MJR <2026-09-28> mjr-zotero-data-key-re: Add personal call number regex: MJR-CN:9999aaaaaa
-  ;; TODO MJR <2026-09-29> mjr-zotero.el: How to deal with "ADS Bibcode: 1979ZhETF..77..617R" as a substring of extras?
   "Regular expressions for identify strings as keys.
 
 Each sub-list contains:
@@ -550,15 +547,33 @@ Boolean Expression match-specifiers
 
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "X9FA49XE")
 ;; t
-;; TODO: Add demo for connector URL.
+;; 
+;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "zotero://select/items/0_X9FA49XE")
+;; t
+;; 
+;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "zotero://select/library/items/X9FA49XE")
+;; t
 ;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "978-981-283-924-4")
 ;; t
-;; TODO: Add demo for isbn prefixes
+;; 
+;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "isbn:978-981-283-924-4")
+;; t
+;; 
+;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "ISBN:978-981-283-924-4")
+;; t
 ;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "9H6MQWM9") "10.48550/arXiv.2108.01999")
 ;; t
-;; TODO: Add demo for doi prefix and doi.org url
+;; 
+;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "9H6MQWM9") "doi:10.48550/arXiv.2108.01999")
+;; t
+;; 
+;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "9H6MQWM9") "DOI:10.48550/arXiv.2108.01999")
+;; t
+;; 
+;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "9H6MQWM9") "https://doi.org/10.48550/arXiv.2108.01999")
+;; t
 ;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") '(:equal "itemType" "book"))
 ;; t
@@ -834,13 +849,18 @@ When run interactively, all the user is prompted for all argument values.  See `
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-connector-link-to-item-key (url)
   "Transform a Zotero link for the Zotero connector into a Zotero item ID."
-  ;; TODO MJR <2026-09-26> mjr-zotero-connector-link-to-item-key: Use mjr-zotero-string-to-match-specifier...
-  (let ((id (string-remove-prefix "zotero://select/items/0_" url)))
-    (if (string-equal url id)
-        (error "mjr-zotero-connector-link-to-item-key: Invalid connector item link!")
-        id)))
+  (if-let* ((ms (mjr-zotero-string-to-match-specifier url))
+            (   (string-equal "key" (cl-second ms)))
+            (id (cl-third ms))
+            (   (mjr-zotero-looks-like-item-key id)))
+      id
+    (error "mjr-zotero-connector-link-to-item-key: Invalid connector item link!")))
 
 ;; (mjr-zotero-connector-link-to-item-key "zotero://select/items/0_WHVVHHDH")
+;; "WHVVHHDH"
+;; 
+;; (mjr-zotero-connector-link-to-item-key "zotero://select/library/items/WHVVHHDH")
+;; "WHVVHHDH"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
