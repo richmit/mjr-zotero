@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.36
+;; Version:     1.37
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -351,7 +351,8 @@ The default value recognizes:
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defcustom mjr-zotero-data-key-predicate :equal
-  "This is the predicate when constructing list-form match-specifiers from strings."
+  "This is the predicate when constructing list-form match-specifiers from strings.  
+Must be one of the symbols in `mjr-zotero-string-predicates'."
   :type 'symbol
   :group 'mjr-zotero)
 
@@ -455,7 +456,7 @@ This function uses `mjr-zotero-data-key-predicate' as the predicate when constru
 ;; [cite:@2005qi-aoancs]
 ;; [cite:See: @2005qi-aoancs]
 ;; [cite:See: @2005qi-aoancs p. 10]
-;; \cite:2005qi-aoancs}
+;; \cite{2005qi-aoancs}
 ;; NASA-TR-R-381
 ;; (:equal "reportNumber" "NASA-TR-R-381")
 
@@ -547,31 +548,31 @@ Boolean Expression match-specifiers
 
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "X9FA49XE")
 ;; t
-;; 
+;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "zotero://select/items/0_X9FA49XE")
 ;; t
-;; 
+;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "zotero://select/library/items/X9FA49XE")
 ;; t
 ;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "978-981-283-924-4")
 ;; t
-;; 
+;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "isbn:978-981-283-924-4")
 ;; t
-;; 
+;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "X9FA49XE") "ISBN:978-981-283-924-4")
 ;; t
 ;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "9H6MQWM9") "10.48550/arXiv.2108.01999")
 ;; t
-;; 
+;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "9H6MQWM9") "doi:10.48550/arXiv.2108.01999")
 ;; t
-;; 
+;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "9H6MQWM9") "DOI:10.48550/arXiv.2108.01999")
 ;; t
-;; 
+;;
 ;; (mjr-zotero-element-match (mjr-zotero-local-api-get-entry "9H6MQWM9") "https://doi.org/10.48550/arXiv.2108.01999")
 ;; t
 ;;
@@ -858,7 +859,7 @@ When run interactively, all the user is prompted for all argument values.  See `
 
 ;; (mjr-zotero-connector-link-to-item-key "zotero://select/items/0_WHVVHHDH")
 ;; "WHVVHHDH"
-;; 
+;;
 ;; (mjr-zotero-connector-link-to-item-key "zotero://select/library/items/WHVVHHDH")
 ;; "WHVVHHDH"
 
