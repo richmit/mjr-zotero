@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.39
+;; Version:     1.40
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -311,12 +311,14 @@ limited conversion of LaTeX accent constructions are also supported."
                                                            :less              string-lessp)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-element-match-default-predicate :equal
   "The predicate used when not explicitly provided as part of a match specifier."
   :type 'symbol
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-element-match-hash-skip-keys '(("creators" "creatorType")
                                                      ("tags"     "type"))
   "Keys to skip for some match checks.  For details see `mjr-zotero-element-match'."
@@ -324,6 +326,7 @@ limited conversion of LaTeX accent constructions are also supported."
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-data-key-re
   (list (cons "key"         "\\b\\(?:zotero://select/items/[0-9]_\\)?\\(?1:[0-9A-Z]\\{8\\}\\)\\b")
         (cons "key"         "\\b\\(?:zotero://select/library/items/\\)?\\(?1:[0-9A-Z]\\{8\\}\\)\\b")
@@ -351,6 +354,7 @@ The default value recognizes:
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-data-key-predicate :equal
   "This is the predicate when constructing list-form match-specifiers from strings.  
 Must be one of the symbols in `mjr-zotero-string-predicates'."
@@ -611,24 +615,28 @@ Boolean Expression match-specifiers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-local-api-host "127.0.0.1"
   "Host name/IP address for local API port."
   :type 'string
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-local-api-port 23119
   "TCP/IP Port for local API port"
   :type 'natnum
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-local-api-timeout 60
   "Timeout for local API calls."
   :type 'natnum
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-local-api-verbose t
   "If non-NIL then produce a `message' for each API call.
 In addition to being useful for debug, this also provides a nice status display when generating a bibliography."
@@ -744,12 +752,14 @@ See `mjr-zotero-local-api-search' for additional information regarding the synta
                               0 "data" "dateModified"))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-local-api-bib-style-default "apa-annotated-bibliography"
   "bibliography style used by `mjr-zotero-db-cache-bib' and `mjr-zotero-local-api-bib'."
   :type '(choice (const nil) string)
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-prompt-bib-style-prompt (list "apa"
                                                     "apa-annotated-bibliography"
                                                     "apa-single-spaced"
@@ -770,6 +780,7 @@ The default includes the following:
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defun mjr-zotero-local-api-bib (item-key-or-list-of-item-keys &optional bib-style between-string plain-text)
   "Generate a formatted bibliographic entry for an item via the Zotero Local API.
 Uses `mjr-zotero-local-api-bib-style-default' if BIB-STYLE is not provided or is NIL.  If PLAIN-TEXT is non-NIL then `mjr-zotero-html-bib-to-plain-text' is
@@ -794,7 +805,15 @@ used to convert the entry. If PLAIN-TEXT is a non-NIL list, then its contents ar
                  (list item-key-or-list-of-item-keys))
              (or between-string "\n\n")))
 
-;; (mjr-zotero-local-api-bib "M2BXF445")
+;; (mjr-zotero-local-api-bib "M2BXF445" "apa" nil t)
+;; "Munkres, J. R. (2000). Topology (2nd ed.). Prentice Hall."
+;; 
+;; (mjr-zotero-local-api-bib "M2BXF445" "apa-annotated-bibliography" nil t)
+;; "Munkres, J. R. (2000). Topology (2nd ed.). Prentice Hall. 
+;; While Dugundji may be a better book, this one is still in print! Like Dugundji, this book covers enough general topology to take care of the needs of most people. The treatment is rigorous, relatively complete, and very clear."
+;; 
+;; (mjr-zotero-local-api-bib "66MV7TIP" "apa" nil t)
+;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325. https://doi.org/10.1016/0893-9659(89)90079-7"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
@@ -843,6 +862,7 @@ When run interactively, all the user is prompted for all argument values.  See `
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-connector-verbose t
   "If non-NIL then produce a `message' for each connector call."
   :type 'boolean
@@ -913,6 +933,7 @@ Populating the cache takes time.  Limiting what is loaded into the cache can hel
   "When `mjr-zotero-db-cache' is non-NIL, contains a string with an update timestamp for `mjr-zotero-db-cache'.")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-db-cache-include nil
   "A list of items to include in the cache.
 If missing \"data\", then it will be added before use.  The inclusion of \"bib\" with a complex style can dramatically slow down cache population/update."
@@ -955,6 +976,7 @@ Note this function makes no use of the custom variable `mjr-zotero-local-api-tag
 ;; (mjr-zotero-db-cache-populate "bib:reading")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-local-api-tag-default nil
   "Used by `mjr-zotero-db-cache-update'.
 If this is a string, then it uses the local Zotero API syntax -- See: `mjr-zotero-local-api-search' for more information.
@@ -963,12 +985,14 @@ See `mjr-zotero-local-api-search' for additional information regarding the synta
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-db-cache-update-limit 100
   "Maximum number of entries `mjr-zotero-db-cache-update' will pull at one time."
   :type 'natnum
   :group 'mjr-zotero)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-db-cache-update-populate nil
   "If non-NIL then `mjr-zotero-db-cache-update' will do full updates via `mjr-zotero-db-cache-populate' wherever `mjr-zotero-db-cache' is stale."
   :type 'boolean
@@ -1026,6 +1050,7 @@ This function attempts to preform incremental updates:
             tot)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-db-cache-search-auto-refresh nil
   "If non-NIL, then auto update `mjr-zotero-db-cache' when stale."
   :type 'boolean
@@ -1114,6 +1139,7 @@ This function returns a list with a single entry for each argument."
 ;; ("MIXEQ7HJ")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;###autoload
 (defcustom mjr-zotero-db-cache-sort-multi-keys '(("data" "creators" 0 "lastName")
                                                  ("data" "date")
                                                  ("data" "title"))
