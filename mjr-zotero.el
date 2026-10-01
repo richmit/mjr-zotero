@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.37
+;; Version:     1.38
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -1276,40 +1276,26 @@ Used interactively:
       (message "mjr-zotero-db-cache-bib-interactive: Bibliography (%d chars) placed on kill ring!" (length b)))
     b))
 
-;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" nil 't)
-;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
-;; https://doi.org/10.1016/0893-9659(89)90079-7"
-;;
-;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "apa-annotated-bibliography" 't)
-;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
-;; https://doi.org/10.1016/0893-9659(89)90079-7"
-;;
-;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "apa" 't)
-;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
-;; https://doi.org/10.1016/0893-9659(89)90079-7"
-;;
-;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "apa-single-spaced" 't)
-;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325.
-;; https://doi.org/10.1016/0893-9659(89)90079-7"
-;;
-;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "chicago-note-bibliography" 't)
-;; "Bogacki, P., and L. F. Shampine. \"A 3(2) Pair of Runge - Kutta Formulas.\" Applied Mathematics Letters 2, no. 4 (1989): 321-25.
-;; https://doi.org/10.1016/0893-9659(89)90079-7."
-;;
-;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "modern-language-association" 't)
-;; "Bogacki, P., and L. F. Shampine. \"A 3(2) Pair of Runge - Kutta Formulas.\" Applied Mathematics Letters, vol. 2, no. 4, Jan. 1989, pp.
-;; 321-25, https://doi.org/10.1016/0893-9659(89)90079-7."
-;;
-;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "chicago-author-date" 't)
-;; "Bogacki, P., and L. F. Shampine. 1989. \"A 3(2) Pair of Runge - Kutta Formulas.\" Applied Mathematics Letters 2 (4): 321-25.
-;; https://doi.org/10.1016/0893-9659(89)90079-7."
-;;
-;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "harvard-cite-them-right" 't)
-;; "Bogacki, P. and Shampine, L.F. (1989) \"A 3(2) pair of Runge - Kutta formulas,\" Applied Mathematics Letters, 2(4), pp. 321-325. Available
-;; at: https://doi.org/10.1016/0893-9659(89)90079-7."
-;;
-;; ;; Here is one I don't have in Zotero:
-;; 10.1016/0771-050X(80)90013-3
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "apa" nil 't)
+;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325. https://doi.org/10.1016/0893-9659(89)90079-7"
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "apa" nil nil)
+;; "<div class=\"csl-bib-body\" style=\"line-height: 2; margin-left: 2em; text-indent:-2em;\">
+;;   <div class=\"csl-entry\">Bogacki, P., &amp; Shampine, L. F. (1989). A 3(2) pair of Runge—Kutta formulas. <i>Applied Mathematics Letters</i>, <i>2</i>(4), 321–325. https://doi.org/10.1016/0893-9659(89)90079-7</div>
+;;   <span class=\"Z3988\" title=\"url_ver=Z39.88-2004&amp;ctx_ver=Z39.88-2004&amp;rfr_id=info%3Asid%2Fzotero.org%3A2&amp;rft_id=info%3Adoi%2F10.1016%2F0893-9659(89)90079-7&amp;rft_val_fmt=info%3Aofi%2Ffmt%3Akev%3Amtx%3Ajournal&amp;rft.genre=article&amp;rft.atitle=A%203(2)%20pair%20of%20Runge%20-%20Kutta%20formulas&amp;rft.jtitle=Applied%20Mathematics%20Letters&amp;rft.stitle=Applied%20Mathematics%20Letters&amp;rft.volume=2&amp;rft.issue=4&amp;rft.aufirst=P.&amp;rft.aulast=Bogacki&amp;rft.au=P.%20Bogacki&amp;rft.au=L.%20F.%20Shampine&amp;rft.date=1989-01-01&amp;rft.pages=321-325&amp;rft.spage=321&amp;rft.epage=325\"></span>
+;; </div>"
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "chicago-note-bibliography" nil 't)
+;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325. https://doi.org/10.1016/0893-9659(89)90079-7"
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "modern-language-association" nil 't)
+;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325. https://doi.org/10.1016/0893-9659(89)90079-7"
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "chicago-author-date" nil 't)
+;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325. https://doi.org/10.1016/0893-9659(89)90079-7"
+;; 
+;; (mjr-zotero-db-cache-bib-interactive "10.1016/0893-9659(89)90079-7" "harvard-cite-them-right" nil 't)
+;; "Bogacki, P., & Shampine, L. F. (1989). A 3(2) pair of Runge-Kutta formulas. Applied Mathematics Letters, 2(4), 321-325. https://doi.org/10.1016/0893-9659(89)90079-7"
 
 (provide 'mjr-zotero)
 
