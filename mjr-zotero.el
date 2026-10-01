@@ -19,7 +19,7 @@
 ;; TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ;; Author:      Mitch Richling
-;; Version:     1.38
+;; Version:     1.39
 ;; Keywords:    mjr-zotero
 ;; URL:         https://github.com/richmit/mjr-zotero
 
@@ -202,6 +202,7 @@
 (require 'cl-lib)
 (require 'url)
 (require 'subr-x)
+(require 'shr)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;###autoload
@@ -224,10 +225,10 @@ limited conversion of LaTeX accent constructions are also supported."
   (when (stringp b)
     (if (not (string-match-p "\\`[[:space:]\n\r]*<div[[:space:]\n\r]*class" b))
         b
-        (let ((shr-width 1000))
           (let ((s (with-temp-buffer
                      (insert b)
-                     (shr-render-region (point-min) (point-max))
+                     (let ((shr-width 1000))
+                       (shr-render-region (point-min) (point-max)))
                      (buffer-substring-no-properties (point-min) (point-max)))))
             (when (and (stringp s) (< 0 (length s)))
               (setq s (string-trim s))
@@ -250,7 +251,7 @@ limited conversion of LaTeX accent constructions are also supported."
               (setq s (replace-regexp-in-string "\\\\[`'^~=.\"]\\([a-zA-Z]\\)"   "\\1" s))  ;; Remove LaTeX accents without bracket protected argument
               (when (stringp prepend-string)
                 (setq s (concat prepend-string s)))
-              s))))))
+              s)))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun mjr-zotero-recursive-getum (error-handler expected-type dat-o-dat &rest rest)
